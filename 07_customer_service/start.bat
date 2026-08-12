@@ -35,6 +35,6 @@ echo [3/3] 启动 Web 服务...
 echo   访问地址: http://127.0.0.1:8000
 echo   按 Ctrl+C 停止
 echo.
-call venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+call ..\venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
 
 pause
