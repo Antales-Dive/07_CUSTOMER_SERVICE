@@ -213,8 +213,8 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
     async def _start():
-        async with lifespan(app):
-            pass  # 触发一次性初始化
-        uvicorn.run(app, host="127.0.0.1", port=8000)
+        server_config = uvicorn.Config(app, host="127.0.0.1", port=8000)
+        server = uvicorn.Server(server_config)
+        await server.serve()
 
     asyncio.run(_start())

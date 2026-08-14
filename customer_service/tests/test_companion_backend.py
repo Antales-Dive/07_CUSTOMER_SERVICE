@@ -143,6 +143,15 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             "我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。",
         )
 
+    def test_direct_launcher_uses_awaitable_uvicorn_server(self):
+        source = read_source("main.py")
+        launcher = source.split('if __name__ == "__main__":', 1)[1]
+
+        self.assertIn("server = uvicorn.Server", launcher)
+        self.assertIn("await server.serve()", launcher)
+        self.assertNotIn("uvicorn.run(app", launcher)
+        self.assertNotIn("async with lifespan(app)", launcher)
+
 
 if __name__ == "__main__":
     unittest.main()
