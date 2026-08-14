@@ -5,6 +5,21 @@ from pathlib import Path
 HTML_PATH = Path(__file__).resolve().parents[1] / "static" / "index.html"
 
 
+def function_body(source, name):
+    marker = f"function {name}"
+    start = source.index(marker)
+    opening_brace = source.index("{", start)
+    depth = 0
+    for index in range(opening_brace, len(source)):
+        if source[index] == "{":
+            depth += 1
+        elif source[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[opening_brace + 1:index]
+    raise ValueError(f"Unbalanced braces in function {name}")
+
+
 class CompanionUIStructureTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -52,8 +67,28 @@ class CompanionUIStructureTests(unittest.TestCase):
         self.assertNotIn("transferHuman", self.html)
         self.assertNotIn(".status-pill", self.html)
         self.assertNotIn("linear-gradient", self.html)
-        self.assertNotIn("bindQuickPrompts", self.html)
-        self.assertNotIn("openSupportPanel", self.html)
+
+    def test_support_dialog_opening_has_no_network_side_effect(self):
+        self.assertIn("function openSupportPanel", self.html)
+        body = function_body(self.html, "openSupportPanel")
+        self.assertIn("showModal", body)
+        self.assertNotIn("fetch(", body)
+        self.assertNotIn("api.", body)
+        self.assertNotIn("/api/tickets", self.html)
+
+    def test_quick_prompts_use_the_existing_chat_flow(self):
+        self.assertIn("function bindQuickPrompts", self.html)
+        self.assertIn("button.dataset.prompt", self.html)
+        self.assertIn("send();", function_body(self.html, "bindQuickPrompts"))
+
+    def test_send_flow_has_no_legacy_human_button_state(self):
+        self.assertNotIn("transferHuman", self.html)
+        body = function_body(self.html, "send")
+        self.assertNotIn("humanBtn", body)
+        self.assertIn(
+            "我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。",
+            body,
+        )
 
     def test_api_methods_use_shared_response_error_helper(self):
         self.assertIn("async function parseResponse(response) {", self.html)

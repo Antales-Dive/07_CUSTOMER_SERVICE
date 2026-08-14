@@ -653,7 +653,7 @@
   <div class="dialog-header">
     <h2 id="support-dialog-title">找真人聊聊</h2>
     <form method="dialog">
-      <button class="dialog-close" type="submit" aria-label="关闭">×</button>
+      <button id="close-support-btn" class="dialog-close" type="submit" aria-label="关闭">×</button>
     </form>
   </div>
   <div class="support-options">
@@ -699,10 +699,51 @@ const inputEl = document.getElementById('input');
 const sendBtn = document.getElementById('send-btn');
 const newSessionBtn = document.getElementById('new-session-btn');
 const chatTitle = document.getElementById('chat-title');
-const welcomeMarkup = messagesEl.innerHTML;
+const supportBtn = document.getElementById('support-btn');
+const supportDialog = document.getElementById('support-dialog');
+const closeSupportBtn = document.getElementById('close-support-btn');
 
-function showWelcomeState() {
-  messagesEl.innerHTML = welcomeMarkup;
+function bindQuickPrompts() {
+  document.querySelectorAll('.quick-prompt').forEach((button) => {
+    button.onclick = () => {
+      inputEl.value = button.dataset.prompt;
+      send();
+    };
+  });
+}
+
+function renderWelcomeState() {
+  messagesEl.innerHTML = `
+    <section id="welcome-state" class="welcome-state" aria-labelledby="welcome-title">
+      <h2 id="welcome-title">今天过得怎么样？</h2>
+      <p class="welcome-copy">不用想好怎么说，想到哪儿说到哪儿。</p>
+      <div class="quick-prompts" aria-label="选择一种聊天方式">
+        <button class="quick-prompt" type="button" data-prompt="我只想吐槽，先听我说说就好。">我只想吐槽</button>
+        <button class="quick-prompt" type="button" data-prompt="陪我理一理现在的感受。">陪我理一理</button>
+        <button class="quick-prompt" type="button" data-prompt="我想和你一起想想办法。">帮我想办法</button>
+        <button class="quick-prompt" type="button" data-prompt="我现在有点撑不住了。">有点撑不住了</button>
+      </div>
+      <p class="privacy-note">聊天会保存在会话历史中，但不会自动联系任何人或转交给真人。</p>
+    </section>
+  `;
+  bindQuickPrompts();
+}
+
+function openSupportPanel() {
+  if (typeof supportDialog.showModal === 'function') {
+    supportDialog.showModal();
+  } else {
+    supportDialog.setAttribute('open', '');
+  }
+  closeSupportBtn.focus();
+}
+
+function closeSupportPanel() {
+  if (typeof supportDialog.close === 'function') {
+    supportDialog.close();
+  } else {
+    supportDialog.removeAttribute('open');
+  }
 }
 
 async function loadSessions(activeId) {
@@ -732,8 +773,12 @@ async function openSession(id) {
   const detail = await api.getSession(id);
   chatTitle.textContent = detail.title;
   messagesEl.innerHTML = '';
-  for (const m of detail.messages) {
-    appendMsg(m.role, m.content);
+  if (detail.messages.length === 0) {
+    renderWelcomeState();
+  } else {
+    for (const m of detail.messages) {
+      appendMsg(m.role, m.content);
+    }
   }
   await loadSessions(id);
 }
@@ -743,11 +788,12 @@ async function createSession() {
   currentSessionId = s.session_id;
   location.hash = `session-${s.session_id}`;
   chatTitle.textContent = '有话说';
-  showWelcomeState();
+  renderWelcomeState();
   await loadSessions(s.session_id);
 }
 
 function appendMsg(role, content, isLoading = false) {
+  document.getElementById('welcome-state')?.remove();
   const wrap = document.createElement('div');
   wrap.className = 'msg ' + role + (isLoading ? ' loading' : '');
   const bubble = document.createElement('div');
@@ -762,9 +808,8 @@ async function send() {
   const content = inputEl.value.trim();
   if (!content || loading || !currentSessionId) return;
   inputEl.value = '';
-  document.getElementById('welcome-state')?.remove();
   appendMsg('user', content);
-  appendMsg('assistant', '正在输入...', true);
+  appendMsg('assistant', '我在听...', true);
   loading = true;
   sendBtn.disabled = true;
   try {
@@ -777,19 +822,26 @@ async function send() {
   } catch (e) {
     messagesEl.removeChild(messagesEl.lastChild);
     appendMsg('assistant', '我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。');
+  } finally {
+    loading = false;
+    sendBtn.disabled = false;
   }
-  loading = false;
-  sendBtn.disabled = false;
 }
 
 sendBtn.onclick = send;
 newSessionBtn.onclick = createSession;
-inputEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
+supportBtn.onclick = openSupportPanel;
+closeSupportBtn.onclick = closeSupportPanel;
+supportDialog.addEventListener('click', (event) => {
+  if (event.target === supportDialog) closeSupportPanel();
+});
+inputEl.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
     send();
   }
 });
+bindQuickPrompts();
 
 (async function init() {
   const hash = location.hash;
