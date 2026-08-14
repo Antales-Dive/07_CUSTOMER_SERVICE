@@ -390,6 +390,132 @@
     opacity: .56;
   }
 
+  #identity-panel {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  #identity-label {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  #identity-btn,
+  .auth-submit,
+  .auth-switch,
+  .auth-mode-tab {
+    min-height: 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  #identity-btn:hover,
+  .auth-submit:hover,
+  .auth-switch:hover,
+  .auth-mode-tab:hover,
+  .auth-mode-tab.active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  #auth-dialog {
+    width: calc(100vw - 32px);
+    max-width: 460px;
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 56px rgba(36, 49, 45, .18);
+  }
+
+  #auth-dialog::backdrop {
+    background: rgba(36, 49, 45, .34);
+  }
+
+  .auth-options {
+    padding: 18px 22px 22px;
+  }
+
+  .auth-mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .auth-panel h3 {
+    margin-bottom: 7px;
+    color: var(--primary-strong);
+    font-size: 15px;
+  }
+
+  .auth-panel p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .auth-panel form {
+    display: grid;
+    gap: 7px;
+  }
+
+  .auth-panel label {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .auth-panel input {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: #fbfcfc;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .auth-submit {
+    margin-top: 14px;
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .auth-submit:hover {
+    background: var(--primary-strong);
+    color: #fff;
+  }
+
+  .auth-switch {
+    width: 100%;
+    margin-top: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--primary-strong);
+  }
+
+  .auth-error {
+    min-height: 21px;
+    margin-top: 8px;
+    color: var(--emergency) !important;
+  }
+
   #support-dialog {
     width: calc(100vw - 32px);
     max-width: 520px;
@@ -538,6 +664,14 @@
       padding-bottom: 10px;
     }
 
+    #identity-panel {
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      margin-top: 0;
+      padding: 6px 12px 10px;
+    }
+
     #chat-header {
       min-height: 64px;
       padding: 10px 14px;
@@ -618,6 +752,10 @@
   <button id="new-session-btn" type="button">重新聊聊</button>
   <p class="sidebar-label">最近聊过</p>
   <div id="session-list" aria-label="最近会话"></div>
+  <div id="identity-panel" aria-live="polite">
+    <span id="identity-label">匿名模式</span>
+    <button id="identity-btn" type="button">账号与登录</button>
+  </div>
 </aside>
 
 <main id="main">
@@ -649,6 +787,38 @@
   </div>
 </main>
 
+<dialog id="auth-dialog" aria-labelledby="auth-dialog-title">
+  <div class="dialog-header">
+    <h2 id="auth-dialog-title">选择使用方式</h2>
+    <form method="dialog">
+      <button id="close-auth-btn" class="dialog-close" type="submit" aria-label="关闭">×</button>
+    </form>
+  </div>
+  <div class="auth-options">
+    <div class="auth-mode-tabs" role="tablist" aria-label="身份模式">
+      <button id="anonymous-mode-btn" class="auth-mode-tab active" type="button" role="tab">匿名使用</button>
+      <button id="account-mode-btn" class="auth-mode-tab" type="button" role="tab">账号登录</button>
+    </div>
+    <section id="anonymous-auth-panel" class="auth-panel">
+      <h3>匿名使用</h3>
+      <p>会话只保存在当前浏览器。注册账号后，可以把当前匿名会话带走。</p>
+      <button id="use-anonymous-btn" class="auth-submit" type="button">继续匿名使用</button>
+    </section>
+    <section id="account-auth-panel" class="auth-panel" hidden>
+      <form id="auth-form">
+        <label for="auth-username">用户名</label>
+        <input id="auth-username" name="username" type="text" maxlength="100" autocomplete="username" required>
+        <label for="auth-password">密码</label>
+        <input id="auth-password" name="password" type="password" maxlength="10" autocomplete="current-password" required>
+        <button id="auth-submit-btn" class="auth-submit" type="submit">登录</button>
+      </form>
+      <button id="auth-intent-btn" class="auth-switch" type="button">还没有账号？注册</button>
+      <button id="logout-btn" class="auth-switch" type="button">退出当前账号</button>
+      <p id="auth-error" class="auth-error" role="alert"></p>
+    </section>
+  </div>
+</dialog>
+
 <dialog id="support-dialog" aria-labelledby="support-dialog-title">
   <div class="dialog-header">
     <h2 id="support-dialog-title">找真人聊聊</h2>
@@ -676,21 +846,79 @@
 <script>
 let currentSessionId = null;
 let loading = false;
+let authMode = localStorage.getItem('youhua_auth_mode') || 'anonymous';
+let authToken = localStorage.getItem('youhua_auth_token') || '';
+let anonymousId = localStorage.getItem('youhua_anonymous_id') || createAnonymousId();
+let currentUsername = localStorage.getItem('youhua_username') || '';
+let authIntent = 'login';
+
+localStorage.setItem('youhua_anonymous_id', anonymousId);
+
+function createAnonymousId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return 'anonymous-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
 
 async function parseResponse(response) {
-  if (!response.ok) throw new Error('Request failed: ' + response.status);
+  if (!response.ok) {
+    let detail = '请求失败：' + response.status;
+    try {
+      const body = await response.json();
+      detail = body.detail || detail;
+    } catch (error) {
+      // Keep the status fallback when the server did not return JSON.
+    }
+    const requestError = new Error(detail);
+    requestError.status = response.status;
+    throw requestError;
+  }
   return response.json();
 }
 
+function identityHeaders(mode = authMode, token = authToken) {
+  const headers = {};
+  if (mode === 'account' && token) {
+    headers.Authorization = 'Bearer ' + token;
+  } else {
+    headers['X-Anonymous-Id'] = anonymousId;
+  }
+  return headers;
+}
+
+async function requestJson(url, options = {}, mode = authMode, token = authToken) {
+  const headers = {...identityHeaders(mode, token), ...(options.headers || {})};
+  const response = await fetch(url, {...options, headers});
+  if (response.status === 401 && authMode === 'account') {
+    authMode = 'anonymous';
+    authToken = '';
+    currentUsername = '';
+    persistAuthState();
+    renderIdentity();
+  }
+  return parseResponse(response);
+}
+
 const api = {
-  createSession: () => fetch('/api/sessions', {method: 'POST'}).then(parseResponse),
-  listSessions: () => fetch('/api/sessions').then(parseResponse),
-  getSession: (id) => fetch(`/api/sessions/${id}`).then(parseResponse),
-  chat: (id, content) => fetch(`/api/chat/${id}`, {
+  ensureAnonymous: () => requestJson('/api/auth/anonymous', {method: 'POST'}, 'anonymous', ''),
+  register: (username, password) => requestJson('/api/auth/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  }, 'anonymous', ''),
+  login: (username, password) => requestJson('/api/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  }, 'anonymous', ''),
+  logout: () => requestJson('/api/auth/logout', {method: 'POST'}),
+  createSession: () => requestJson('/api/sessions', {method: 'POST'}),
+  listSessions: () => requestJson('/api/sessions'),
+  getSession: (id) => requestJson(`/api/sessions/${id}`),
+  chat: (id, content) => requestJson(`/api/chat/${id}`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({content})
-  }).then(parseResponse),
+  }),
 };
 
 const sessionListEl = document.getElementById('session-list');
@@ -702,6 +930,114 @@ const chatTitle = document.getElementById('chat-title');
 const supportBtn = document.getElementById('support-btn');
 const supportDialog = document.getElementById('support-dialog');
 const closeSupportBtn = document.getElementById('close-support-btn');
+const identityLabel = document.getElementById('identity-label');
+const identityBtn = document.getElementById('identity-btn');
+const authDialog = document.getElementById('auth-dialog');
+const closeAuthBtn = document.getElementById('close-auth-btn');
+const anonymousModeBtn = document.getElementById('anonymous-mode-btn');
+const accountModeBtn = document.getElementById('account-mode-btn');
+const anonymousAuthPanel = document.getElementById('anonymous-auth-panel');
+const accountAuthPanel = document.getElementById('account-auth-panel');
+const useAnonymousBtn = document.getElementById('use-anonymous-btn');
+const authForm = document.getElementById('auth-form');
+const authUsername = document.getElementById('auth-username');
+const authPassword = document.getElementById('auth-password');
+const authSubmitBtn = document.getElementById('auth-submit-btn');
+const authIntentBtn = document.getElementById('auth-intent-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const authError = document.getElementById('auth-error');
+
+function persistAuthState() {
+  localStorage.setItem('youhua_auth_mode', authMode);
+  localStorage.setItem('youhua_anonymous_id', anonymousId);
+  if (authToken) localStorage.setItem('youhua_auth_token', authToken);
+  else localStorage.removeItem('youhua_auth_token');
+  if (currentUsername) localStorage.setItem('youhua_username', currentUsername);
+  else localStorage.removeItem('youhua_username');
+}
+
+function renderIdentity() {
+  identityLabel.textContent = authMode === 'account'
+    ? '账号：' + currentUsername
+    : '匿名模式（当前浏览器）';
+  identityBtn.textContent = authMode === 'account' ? '切换身份' : '账号与登录';
+}
+
+function showAuthMode(mode) {
+  const account = mode === 'account';
+  anonymousAuthPanel.hidden = account;
+  accountAuthPanel.hidden = !account;
+  anonymousModeBtn.classList.toggle('active', !account);
+  accountModeBtn.classList.toggle('active', account);
+  if (account) authUsername.focus();
+}
+
+function openAuthPanel() {
+  authError.textContent = '';
+  showAuthMode(authMode === 'account' ? 'account' : 'anonymous');
+  if (typeof authDialog.showModal === 'function') authDialog.showModal();
+  else authDialog.setAttribute('open', '');
+}
+
+function closeAuthPanel() {
+  if (typeof authDialog.close === 'function') authDialog.close();
+  else authDialog.removeAttribute('open');
+}
+
+async function switchToAnonymous() {
+  authMode = 'anonymous';
+  authToken = '';
+  currentUsername = '';
+  persistAuthState();
+  await api.ensureAnonymous();
+  closeAuthPanel();
+  await createSession();
+  renderIdentity();
+}
+
+async function applyAccountAuth(auth, keepCurrentSession) {
+  authMode = 'account';
+  authToken = auth.token;
+  currentUsername = auth.username || '';
+  persistAuthState();
+  closeAuthPanel();
+  renderIdentity();
+  if (keepCurrentSession && currentSessionId) {
+    try {
+      await openSession(currentSessionId);
+      return;
+    } catch (error) {
+      // The current anonymous session may have been removed by an older server.
+    }
+  }
+  await createSession();
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  authError.textContent = '';
+  authSubmitBtn.disabled = true;
+  try {
+    const auth = authIntent === 'register'
+      ? await api.register(authUsername.value, authPassword.value)
+      : await api.login(authUsername.value, authPassword.value);
+    await applyAccountAuth(auth, authIntent === 'register');
+  } catch (error) {
+    authError.textContent = error.message;
+  } finally {
+    authSubmitBtn.disabled = false;
+  }
+}
+
+async function logoutAccount() {
+  try {
+    await api.logout();
+  } catch (error) {
+    authError.textContent = error.message;
+    return;
+  }
+  await switchToAnonymous();
+}
 
 function bindQuickPrompts() {
   document.querySelectorAll('.quick-prompt').forEach((button) => {
@@ -844,8 +1180,24 @@ sendBtn.onclick = send;
 newSessionBtn.onclick = createSession;
 supportBtn.onclick = openSupportPanel;
 closeSupportBtn.onclick = closeSupportPanel;
+identityBtn.onclick = openAuthPanel;
+closeAuthBtn.onclick = closeAuthPanel;
+anonymousModeBtn.onclick = () => showAuthMode('anonymous');
+accountModeBtn.onclick = () => showAuthMode('account');
+useAnonymousBtn.onclick = switchToAnonymous;
+authIntentBtn.onclick = () => {
+  authIntent = authIntent === 'login' ? 'register' : 'login';
+  authSubmitBtn.textContent = authIntent === 'register' ? '注册并绑定当前会话' : '登录';
+  authIntentBtn.textContent = authIntent === 'register' ? '已有账号？登录' : '还没有账号？注册';
+  authPassword.autocomplete = authIntent === 'register' ? 'new-password' : 'current-password';
+};
+authForm.addEventListener('submit', submitAuth);
+logoutBtn.onclick = logoutAccount;
 supportDialog.addEventListener('click', (event) => {
   if (event.target === supportDialog) closeSupportPanel();
+});
+authDialog.addEventListener('click', (event) => {
+  if (event.target === authDialog) closeAuthPanel();
 });
 inputEl.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -854,12 +1206,18 @@ inputEl.addEventListener('keydown', (event) => {
   }
 });
 bindQuickPrompts();
+renderIdentity();
 
 (async function init() {
+  await api.ensureAnonymous();
   const hash = location.hash;
   const match = hash.match(/session-([\w-]+)/);
   if (match) {
-    await openSession(match[1]);
+    try {
+      await openSession(match[1]);
+    } catch (error) {
+      await createSession();
+    }
   } else {
     await createSession();
   }

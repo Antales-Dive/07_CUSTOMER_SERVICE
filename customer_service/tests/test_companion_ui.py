@@ -123,13 +123,38 @@ class CompanionUIStructureTests(unittest.TestCase):
 
     def test_api_methods_use_shared_response_error_helper(self):
         self.assertIn("async function parseResponse(response) {", self.html)
-        self.assertIn(
-            "if (!response.ok) throw new Error('Request failed: ' + response.status);",
-            self.html,
-        )
+        self.assertIn("let detail = '请求失败：' + response.status;", self.html)
         self.assertIn("return response.json();", self.html)
         self.assertNotIn(".then(r => r.json())", self.html)
-        self.assertEqual(self.html.count(".then(parseResponse)"), 4)
+        self.assertIn("function requestJson(url, options = {}, mode = authMode, token = authToken)", self.html)
+        self.assertIn("headers.Authorization = 'Bearer ' + token;", self.html)
+        self.assertIn("headers['X-Anonymous-Id'] = anonymousId;", self.html)
+
+    def test_identity_modes_and_auth_controls_are_present(self):
+        required_structure = (
+            'id="identity-panel"',
+            'id="auth-dialog"',
+            'id="anonymous-mode-btn"',
+            'id="account-mode-btn"',
+            'id="auth-form"',
+            'id="logout-btn"',
+            "localStorage.getItem('youhua_anonymous_id')",
+            "localStorage.setItem('youhua_auth_token', authToken)",
+            "api.register",
+            "api.login",
+        )
+        for item in required_structure:
+            with self.subTest(item=item):
+                self.assertIn(item, self.html)
+
+    def test_identity_switch_refreshes_sessions_and_open_session_restores_messages(self):
+        self.assertIn("async function switchToAnonymous()", self.html)
+        self.assertIn("await createSession();", function_body(self.html, "switchToAnonymous"))
+        register_body = function_body(self.html, "applyAccountAuth")
+        self.assertIn("await openSession(currentSessionId);", register_body)
+        open_body = function_body(self.html, "openSession")
+        self.assertIn("const detail = await api.getSession(id);", open_body)
+        self.assertIn("for (const m of detail.messages)", open_body)
 
     def test_create_session_synchronizes_location_hash(self):
         self.assertIn(
