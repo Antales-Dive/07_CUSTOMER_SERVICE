@@ -52,6 +52,22 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, prompt)
 
+    def test_system_prompt_covers_urgent_safety_paths(self):
+        prompt = assigned_string_constants("config.py")["SYSTEM_PROMPT"]
+
+        required_phrases = (
+            "自伤、自杀或伤害他人的意图、计划、时间或方法",
+            "正在遭受暴力或严重失控",
+            "停止普通建议",
+            "先确认用户当前是否安全",
+            "可信任的身边人",
+            "经过核实的学校支持",
+            "当地紧急服务",
+        )
+        for phrase in required_phrases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, prompt)
+
     def test_agent_factory_registers_only_safe_base_tools(self):
         source = read_source("agent_factory.py")
         tree = ast.parse(source, filename="agent_factory.py")
@@ -64,6 +80,16 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             for node in tree.body
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "build_agent"
         )
+        parameter_names = [
+            parameter.arg
+            for parameter in (
+                *build_agent.args.posonlyargs,
+                *build_agent.args.args,
+                *build_agent.args.kwonlyargs,
+            )
+        ]
+        self.assertIn("session_id", parameter_names)
+
         tool_assignments = [
             node
             for node in build_agent.body
@@ -78,6 +104,27 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             [element.id if isinstance(element, ast.Name) else None for element in initial_tools.elts],
             ["get_weather", "query_order"],
         )
+
+        tool_calls = [
+            node
+            for node in ast.walk(build_agent)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "tools"
+        ]
+        call_contracts = {
+            (
+                call.func.attr,
+                tuple(
+                    argument.id if isinstance(argument, ast.Name) else None
+                    for argument in call.args
+                ),
+            )
+            for call in tool_calls
+        }
+        self.assertIn(("append", ("rag_tool",)), call_contracts)
+        self.assertIn(("extend", ("mcp_tools",)), call_contracts)
 
     def test_legacy_customer_service_transfer_copy_is_removed(self):
         for filename in ("config.py", "main.py", "rag.py"):
