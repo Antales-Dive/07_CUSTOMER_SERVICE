@@ -44,7 +44,7 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             "有话说",
             "先回应用户具体表达出的感受",
             "询问用户更需要倾听、梳理还是建议",
-            "不进行心理疾病诊断",
+            "不进行心理疾病诊断或治疗",
             "找真人聊聊",
             "不能声称已经联系任何人",
         )
@@ -54,10 +54,30 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
 
     def test_agent_factory_registers_only_safe_base_tools(self):
         source = read_source("agent_factory.py")
+        tree = ast.parse(source, filename="agent_factory.py")
 
         self.assertNotIn("make_transfer_human", source)
         self.assertNotIn("transfer_human", source)
-        self.assertIn("tools = [get_weather, query_order]", source)
+
+        build_agent = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.AsyncFunctionDef) and node.name == "build_agent"
+        )
+        tool_assignments = [
+            node
+            for node in build_agent.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "tools" for target in node.targets)
+        ]
+        self.assertEqual(len(tool_assignments), 1)
+
+        initial_tools = tool_assignments[0].value
+        self.assertIsInstance(initial_tools, ast.List)
+        self.assertEqual(
+            [element.id if isinstance(element, ast.Name) else None for element in initial_tools.elts],
+            ["get_weather", "query_order"],
+        )
 
     def test_legacy_customer_service_transfer_copy_is_removed(self):
         for filename in ("config.py", "main.py", "rag.py"):
