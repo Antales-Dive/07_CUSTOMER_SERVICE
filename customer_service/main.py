@@ -1,7 +1,7 @@
 """FastAPI 应用入口：路由定义 + lifespan 管理。
 
 - lifespan：启动时初始化数据库、加载 MCP 工具和 FAQ 检索工具（各一次）
-- chat 路由：保存消息 → 重建历史 → 构建 Agent → 调用 → 处理工单 → 保存回复
+- chat 路由：会话、消息和遗留工单路由
 """
 
 import sys
@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
     # 关闭时（如有需要，清理资源）
 
 
-app = FastAPI(title="智能客服", lifespan=lifespan)
+app = FastAPI(title="有话说", lifespan=lifespan)
 
 # 静态文件（前端页面）
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

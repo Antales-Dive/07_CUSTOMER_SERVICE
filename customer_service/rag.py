@@ -134,7 +134,7 @@ def build_faq_search_tool(vectorstore: Chroma):
         func=_search,
         name="search_faq",
         description=(
-            "搜索客服 FAQ 知识库，获取常见问题的标准答案。"
+            "搜索已配置的常见问题知识库，获取标准答案。"
             "当用户询问以下主题时使用：账号与登录、退换货、支付与退款、"
             "物流与配送、订单管理、客服工作时间、企业合作。"
             "注意：如果返回结果为空或开头是\"知识库没有检索到相关答案\"，"

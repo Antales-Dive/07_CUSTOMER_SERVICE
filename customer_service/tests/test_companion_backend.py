@@ -37,6 +37,29 @@ def string_literals(filename: str) -> list[str]:
 
 
 class CompanionBackendSafetyContractTests(unittest.TestCase):
+    def test_app_identity_uses_companion_name(self):
+        main_source = read_source("main.py")
+        tree = ast.parse(main_source, filename="main.py")
+
+        fastapi_titles = [
+            keyword.value.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "FastAPI"
+            for keyword in node.keywords
+            if keyword.arg == "title"
+            and isinstance(keyword.value, ast.Constant)
+            and isinstance(keyword.value.value, str)
+        ]
+        self.assertIn("有话说", fastapi_titles)
+
+    def test_rag_uses_neutral_knowledge_base_identity(self):
+        rag_source = read_source("rag.py")
+
+        self.assertNotIn("客服 FAQ", rag_source)
+        self.assertIn("搜索已配置的常见问题知识库，获取标准答案。", rag_source)
+
     def test_system_prompt_contains_approved_safety_language(self):
         prompt = assigned_string_constants("config.py")["SYSTEM_PROMPT"]
 
