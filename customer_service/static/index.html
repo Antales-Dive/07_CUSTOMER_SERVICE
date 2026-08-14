@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>有话说</title>
+<style>
+  :root {
+    --bg: #f2f6f4;
+    --surface: #ffffff;
+    --text: #24312d;
+    --muted: #66756f;
+    --primary: #237f73;
+    --primary-strong: #19685f;
+    --primary-soft: #e7f2ef;
+    --signal: #f0c766;
+    --emergency: #b94f4b;
+    --emergency-soft: #fff3f2;
+    --border: #dce5e1;
+    --border-strong: #c6d4cf;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+
+  button,
+  textarea {
+    font: inherit;
+  }
+
+  button:focus-visible,
+  textarea:focus-visible,
+  .session-item:focus-visible {
+    outline: 3px solid rgba(240, 199, 102, .72);
+    outline-offset: 2px;
+  }
+
+  button {
+    letter-spacing: 0;
+  }
+
+  #sidebar {
+    width: 264px;
+    min-width: 264px;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+
+  #sidebar h1 {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 18px 20px 14px;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  #new-session-btn {
+    min-height: 42px;
+    margin: 8px 16px 22px;
+    padding: 0 14px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--primary-strong);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+  }
+
+  #new-session-btn:hover {
+    border-color: var(--primary-strong);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  .sidebar-label {
+    padding: 0 20px 9px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 10px 18px;
+  }
+
+  .session-item {
+    position: relative;
+    min-height: 44px;
+    margin-bottom: 4px;
+    padding: 12px 12px 12px 17px;
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background .16s ease, color .16s ease;
+  }
+
+  .session-item:hover {
+    background: #f6f9f8;
+    color: var(--text);
+  }
+
+  .session-item.active {
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    font-weight: 700;
+  }
+
+  .session-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--signal);
+  }
+
+  #main {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  #chat-header {
+    min-height: 72px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  #chat-title {
+    max-width: min(56vw, 680px);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #support-btn {
+    min-height: 38px;
+    flex: 0 0 auto;
+    padding: 0 13px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+  }
+
+  #support-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  #messages {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 32px 38px;
+    background: var(--bg);
+  }
+
+  .welcome-state {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 82px 0 32px;
+  }
+
+  .welcome-state h2 {
+    margin-bottom: 12px;
+    color: var(--text);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  .welcome-copy {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  .quick-prompts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 30px;
+  }
+
+  .quick-prompt {
+    min-height: 70px;
+    padding: 15px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .74);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.5;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+  }
+
+  .quick-prompt:hover {
+    border-color: var(--primary);
+    background: var(--surface);
+    color: var(--primary-strong);
+  }
+
+  .quick-prompt:last-child {
+    border-color: #e5bfbd;
+    background: var(--emergency-soft);
+    color: var(--emergency);
+  }
+
+  .quick-prompt:last-child:hover {
+    border-color: var(--emergency);
+    background: #fff;
+  }
+
+  .privacy-note {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .msg {
+    display: flex;
+    width: 100%;
+    max-width: 920px;
+    margin: 18px auto 0;
+  }
+
+  .msg.user {
+    justify-content: flex-end;
+  }
+
+  .bubble {
+    max-width: min(70%, 680px);
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg.user .bubble {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .msg.assistant .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .msg.loading .bubble {
+    border: 1px dashed var(--border-strong);
+    background: #edf3f0;
+    color: var(--muted);
+  }
+
+  #input-area {
+    min-height: 80px;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 82px;
+    gap: 10px;
+    align-items: end;
+    padding: 14px 22px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  #input-area textarea {
+    width: 100%;
+    min-height: 50px;
+    max-height: 128px;
+    resize: none;
+    padding: 13px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: #fbfcfc;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  #input-area textarea::placeholder {
+    color: #89958f;
+  }
+
+  #input-area textarea:focus {
+    border-color: var(--primary);
+    background: var(--surface);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(35, 127, 115, .12);
+  }
+
+  #send-btn {
+    min-height: 46px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .16s ease, border-color .16s ease, opacity .16s ease;
+  }
+
+  #send-btn:hover {
+    border-color: var(--primary-strong);
+    background: var(--primary-strong);
+  }
+
+  #send-btn:disabled {
+    cursor: not-allowed;
+    opacity: .56;
+  }
+
+  #support-dialog {
+    width: calc(100vw - 32px);
+    max-width: 520px;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 56px rgba(36, 49, 45, .18);
+  }
+
+  #support-dialog::backdrop {
+    background: rgba(36, 49, 45, .34);
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px 15px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dialog-header h2 {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .dialog-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+  }
+
+  .dialog-close:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .support-options {
+    padding: 6px 22px;
+  }
+
+  .support-option {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .support-option:last-child {
+    border-bottom: 0;
+  }
+
+  .support-option h3 {
+    margin-bottom: 5px;
+    color: var(--primary-strong);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .support-option p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .support-option.urgent h3 {
+    color: var(--emergency);
+  }
+
+  .support-option.urgent p {
+    color: #7c4a47;
+  }
+
+  .dialog-footer {
+    padding: 14px 22px 18px;
+    background: #fafcfb;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 760px) {
+    body {
+      flex-direction: column;
+    }
+
+    #sidebar {
+      width: 100%;
+      min-width: 0;
+      max-height: 178px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #sidebar h1 {
+      min-height: 58px;
+      padding: 11px 14px 8px;
+      font-size: 17px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+    }
+
+    #new-session-btn {
+      min-height: 38px;
+      margin: 10px 12px 7px 6px;
+      padding: 0 12px;
+    }
+
+    .sidebar-label {
+      grid-column: 1 / -1;
+      padding: 2px 14px 6px;
+    }
+
+    #session-list {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0 12px 11px;
+    }
+
+    .session-item {
+      flex: 0 0 170px;
+      min-height: 40px;
+      margin-bottom: 0;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    #chat-header {
+      min-height: 64px;
+      padding: 10px 14px;
+    }
+
+    #chat-title {
+      max-width: 48vw;
+      font-size: 16px;
+    }
+
+    #support-btn {
+      min-height: 36px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    #messages {
+      padding: 0 16px 24px;
+    }
+
+    .welcome-state {
+      padding-top: 40px;
+    }
+
+    .welcome-state h2 {
+      font-size: 25px;
+    }
+
+    .quick-prompts {
+      grid-template-columns: 1fr;
+      margin-top: 24px;
+    }
+
+    .quick-prompt {
+      min-height: 58px;
+    }
+
+    .bubble {
+      max-width: 88%;
+    }
+
+    #input-area {
+      min-height: 72px;
+      grid-template-columns: minmax(0, 1fr) 72px;
+      padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+    }
+
+    #input-area textarea {
+      min-height: 48px;
+    }
+
+    #support-dialog {
+      width: calc(100vw - 24px);
+      max-height: calc(100dvh - 24px);
+    }
+
+    .dialog-header,
+    .support-options,
+    .dialog-footer {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<aside id="sidebar">
+  <h1><span class="brand-mark">说</span><span>有话说</span></h1>
+  <button id="new-session-btn" type="button">重新聊聊</button>
+  <p class="sidebar-label">最近聊过</p>
+  <div id="session-list" aria-label="最近会话"></div>
+</aside>
+
+<main id="main">
+  <header id="chat-header">
+    <div>
+      <p class="header-label">今天的对话</p>
+      <h2 id="chat-title">有话说</h2>
+    </div>
+    <button id="support-btn" type="button">找真人聊聊</button>
+  </header>
+
+  <div id="messages" aria-live="polite">
+    <section id="welcome-state" class="welcome-state" aria-labelledby="welcome-title">
+      <h2 id="welcome-title">今天过得怎么样？</h2>
+      <p class="welcome-copy">不用想好怎么说，想到哪儿说到哪儿。</p>
+      <div class="quick-prompts" aria-label="选择一种聊天方式">
+        <button class="quick-prompt" type="button" data-prompt="我只想吐槽，先听我说说就好。">我只想吐槽</button>
+        <button class="quick-prompt" type="button" data-prompt="陪我理一理现在的感受。">陪我理一理</button>
+        <button class="quick-prompt" type="button" data-prompt="我想和你一起想想办法。">帮我想办法</button>
+        <button class="quick-prompt" type="button" data-prompt="我现在有点撑不住了。">有点撑不住了</button>
+      </div>
+      <p class="privacy-note">聊天会保存在会话历史中，但不会自动联系任何人或转交给真人。</p>
+    </section>
+  </div>
+
+  <div id="input-area">
+    <textarea id="input" rows="1" placeholder="慢慢说，我在听。" aria-label="输入聊天内容"></textarea>
+    <button id="send-btn" type="button" aria-label="发送消息">发送</button>
+  </div>
+</main>
+
+<dialog id="support-dialog" aria-labelledby="support-dialog-title">
+  <div class="dialog-header">
+    <h2 id="support-dialog-title">找真人聊聊</h2>
+    <form method="dialog">
+      <button class="dialog-close" type="submit" aria-label="关闭">×</button>
+    </form>
+  </div>
+  <div class="support-options">
+    <section class="support-option">
+      <h3>联系辅导员</h3>
+      <p>适合学业、宿舍、经济困难或其他校园事务，请通过班级或学院官方渠道联系。</p>
+    </section>
+    <section class="support-option">
+      <h3>预约心理咨询</h3>
+      <p>如果低落、焦虑或痛苦持续存在，可以通过学校官方心理咨询中心预约。</p>
+    </section>
+    <section class="support-option urgent">
+      <h3>紧急求助</h3>
+      <p>如果你或他人正处于危险中，请立即联系身边可信任的人或当地紧急服务。</p>
+    </section>
+  </div>
+  <p class="dialog-footer">这里不会自动联系任何人，也不会把当前聊天内容转交给真人。</p>
+</dialog>
+
+<script>
+let currentSessionId = null;
+let loading = false;
+
+const api = {
+  createSession: () => fetch('/api/sessions', {method: 'POST'}).then(r => r.json()),
+  listSessions: () => fetch('/api/sessions').then(r => r.json()),
+  getSession: (id) => fetch(`/api/sessions/${id}`).then(r => r.json()),
+  chat: (id, content) => fetch(`/api/chat/${id}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({content})
+  }).then(r => r.json()),
+};
+
+const sessionListEl = document.getElementById('session-list');
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+const newSessionBtn = document.getElementById('new-session-btn');
+const chatTitle = document.getElementById('chat-title');
+const welcomeMarkup = messagesEl.innerHTML;
+
+function showWelcomeState() {
+  messagesEl.innerHTML = welcomeMarkup;
+}
+
+async function loadSessions(activeId) {
+  const sessions = await api.listSessions();
+  sessionListEl.innerHTML = '';
+  for (const s of sessions) {
+    const div = document.createElement('div');
+    div.className = 'session-item' + (s.session_id === activeId ? ' active' : '');
+    div.textContent = s.title;
+    div.tabIndex = 0;
+    div.setAttribute('role', 'button');
+    div.onclick = () => openSession(s.session_id);
+    div.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openSession(s.session_id);
+      }
+    };
+    sessionListEl.appendChild(div);
+  }
+}
+
+async function openSession(id) {
+  currentSessionId = id;
+  location.hash = `session-${id}`;
+  const detail = await api.getSession(id);
+  chatTitle.textContent = detail.title;
+  messagesEl.innerHTML = '';
+  for (const m of detail.messages) {
+    appendMsg(m.role, m.content);
+  }
+  await loadSessions(id);
+}
+
+async function createSession() {
+  const s = await api.createSession();
+  currentSessionId = s.session_id;
+  chatTitle.textContent = '有话说';
+  showWelcomeState();
+  await loadSessions(s.session_id);
+}
+
+function appendMsg(role, content, isLoading = false) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role + (isLoading ? ' loading' : '');
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+async function send() {
+  const content = inputEl.value.trim();
+  if (!content || loading || !currentSessionId) return;
+  inputEl.value = '';
+  document.getElementById('welcome-state')?.remove();
+  appendMsg('user', content);
+  appendMsg('assistant', '正在输入...', true);
+  loading = true;
+  sendBtn.disabled = true;
+  try {
+    const resp = await api.chat(currentSessionId, content);
+    messagesEl.removeChild(messagesEl.lastChild);
+    appendMsg('assistant', resp.content);
+    location.hash = `session-${currentSessionId}`;
+    await loadSessions(currentSessionId);
+    if (chatTitle.textContent === '有话说') chatTitle.textContent = content.slice(0, 20);
+  } catch (e) {
+    messagesEl.removeChild(messagesEl.lastChild);
+    appendMsg('assistant', '我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。');
+  }
+  loading = false;
+  sendBtn.disabled = false;
+}
+
+sendBtn.onclick = send;
+newSessionBtn.onclick = createSession;
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    send();
+  }
+});
+
+(async function init() {
+  const hash = location.hash;
+  const match = hash.match(/session-([\w-]+)/);
+  if (match) {
+    await openSession(match[1]);
+  } else {
+    await createSession();
+  }
+})();
+</script>
+</body>
+</html>
