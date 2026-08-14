@@ -50,6 +50,32 @@ class CompanionUIStructureTests(unittest.TestCase):
     def test_legacy_human_transfer_is_removed(self):
         self.assertNotIn('id="human-btn"', self.html)
         self.assertNotIn("transferHuman", self.html)
+        self.assertNotIn(".status-pill", self.html)
+        self.assertNotIn("linear-gradient", self.html)
+        self.assertNotIn("bindQuickPrompts", self.html)
+        self.assertNotIn("openSupportPanel", self.html)
+
+    def test_api_methods_use_shared_response_error_helper(self):
+        self.assertIn("async function parseResponse(response) {", self.html)
+        self.assertIn(
+            "if (!response.ok) throw new Error('Request failed: ' + response.status);",
+            self.html,
+        )
+        self.assertIn("return response.json();", self.html)
+        self.assertNotIn(".then(r => r.json())", self.html)
+        self.assertEqual(self.html.count(".then(parseResponse)"), 4)
+
+    def test_create_session_synchronizes_location_hash(self):
+        self.assertIn(
+            "currentSessionId = s.session_id;\n  location.hash = `session-${s.session_id}`;",
+            self.html,
+        )
+
+    def test_session_items_expose_explicit_current_state(self):
+        self.assertIn(
+            "div.setAttribute('aria-current', s.session_id === activeId ? 'page' : 'false');",
+            self.html,
+        )
 
 
 if __name__ == "__main__":

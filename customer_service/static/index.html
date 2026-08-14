@@ -677,15 +677,20 @@
 let currentSessionId = null;
 let loading = false;
 
+async function parseResponse(response) {
+  if (!response.ok) throw new Error('Request failed: ' + response.status);
+  return response.json();
+}
+
 const api = {
-  createSession: () => fetch('/api/sessions', {method: 'POST'}).then(r => r.json()),
-  listSessions: () => fetch('/api/sessions').then(r => r.json()),
-  getSession: (id) => fetch(`/api/sessions/${id}`).then(r => r.json()),
+  createSession: () => fetch('/api/sessions', {method: 'POST'}).then(parseResponse),
+  listSessions: () => fetch('/api/sessions').then(parseResponse),
+  getSession: (id) => fetch(`/api/sessions/${id}`).then(parseResponse),
   chat: (id, content) => fetch(`/api/chat/${id}`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({content})
-  }).then(r => r.json()),
+  }).then(parseResponse),
 };
 
 const sessionListEl = document.getElementById('session-list');
@@ -709,6 +714,7 @@ async function loadSessions(activeId) {
     div.textContent = s.title;
     div.tabIndex = 0;
     div.setAttribute('role', 'button');
+    div.setAttribute('aria-current', s.session_id === activeId ? 'page' : 'false');
     div.onclick = () => openSession(s.session_id);
     div.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -735,6 +741,7 @@ async function openSession(id) {
 async function createSession() {
   const s = await api.createSession();
   currentSessionId = s.session_id;
+  location.hash = `session-${s.session_id}`;
   chatTitle.textContent = '有话说';
   showWelcomeState();
   await loadSessions(s.session_id);
