@@ -767,6 +767,14 @@ async function loadSessions(activeId) {
   }
 }
 
+async function refreshSessionsSafely(activeId) {
+  try {
+    await loadSessions(activeId);
+  } catch (error) {
+    console.warn('会话列表刷新失败', error);
+  }
+}
+
 async function openSession(id) {
   currentSessionId = id;
   location.hash = `session-${id}`;
@@ -813,15 +821,19 @@ async function send() {
   loading = true;
   sendBtn.disabled = true;
   try {
-    const resp = await api.chat(currentSessionId, content);
+    let resp;
+    try {
+      resp = await api.chat(currentSessionId, content);
+    } catch (error) {
+      messagesEl.removeChild(messagesEl.lastChild);
+      appendMsg('assistant', '我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。');
+      return;
+    }
     messagesEl.removeChild(messagesEl.lastChild);
     appendMsg('assistant', resp.content);
     location.hash = `session-${currentSessionId}`;
-    await loadSessions(currentSessionId);
+    await refreshSessionsSafely(currentSessionId);
     if (chatTitle.textContent === '有话说') chatTitle.textContent = content.slice(0, 20);
-  } catch (e) {
-    messagesEl.removeChild(messagesEl.lastChild);
-    appendMsg('assistant', '我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。');
   } finally {
     loading = false;
     sendBtn.disabled = false;

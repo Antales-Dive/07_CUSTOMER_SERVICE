@@ -76,15 +76,46 @@ class CompanionUIStructureTests(unittest.TestCase):
         self.assertNotIn("api.", body)
         self.assertNotIn("/api/tickets", self.html)
 
+    def test_support_dialog_uses_native_close_and_backdrop_bindings(self):
+        self.assertIn('<dialog id="support-dialog"', self.html)
+        self.assertIn("showModal", self.html)
+        close_body = function_body(self.html, "closeSupportPanel")
+        self.assertIn("supportDialog.close()", close_body)
+        self.assertIn("supportDialog.removeAttribute('open')", close_body)
+        self.assertIn("closeSupportBtn.onclick = closeSupportPanel;", self.html)
+        self.assertIn("supportDialog.addEventListener('click', (event) => {", self.html)
+        self.assertIn(
+            "if (event.target === supportDialog) closeSupportPanel();",
+            self.html,
+        )
+
     def test_quick_prompts_use_the_existing_chat_flow(self):
         self.assertIn("function bindQuickPrompts", self.html)
-        self.assertIn("button.dataset.prompt", self.html)
-        self.assertIn("send();", function_body(self.html, "bindQuickPrompts"))
+        body = function_body(self.html, "bindQuickPrompts")
+        self.assertIn("inputEl.value = button.dataset.prompt;", body)
+        self.assertEqual(body.count("send();"), 1)
+        self.assertNotIn("api", body)
+        self.assertNotIn("fetch(", body)
+
+    def test_chat_and_session_refresh_errors_are_isolated(self):
+        self.assertIn("async function refreshSessionsSafely(activeId)", self.html)
+        refresh_body = function_body(self.html, "refreshSessionsSafely")
+        self.assertIn("try", refresh_body)
+        self.assertIn("await loadSessions(activeId);", refresh_body)
+        self.assertIn("catch (error)", refresh_body)
+        self.assertIn("console.warn('会话列表刷新失败', error);", refresh_body)
+
+        send_body = function_body(self.html, "send")
+        self.assertIn("await refreshSessionsSafely(currentSessionId);", send_body)
+        self.assertNotIn("await loadSessions(currentSessionId);", send_body)
 
     def test_send_flow_has_no_legacy_human_button_state(self):
         self.assertNotIn("transferHuman", self.html)
         body = function_body(self.html, "send")
         self.assertNotIn("humanBtn", body)
+        self.assertIn("if (!content || loading || !currentSessionId) return;", body)
+        self.assertIn("sendBtn.disabled = true;", body)
+        self.assertIn("sendBtn.disabled = false;", body)
         self.assertIn(
             "我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。",
             body,
