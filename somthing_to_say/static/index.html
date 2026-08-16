@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>有话说</title>
+<style>
+  :root {
+    --bg: #f2f6f4;
+    --surface: #ffffff;
+    --text: #24312d;
+    --muted: #66756f;
+    --primary: #237f73;
+    --primary-strong: #19685f;
+    --primary-soft: #e7f2ef;
+    --signal: #f0c766;
+    --emergency: #b94f4b;
+    --emergency-soft: #fff3f2;
+    --border: #dce5e1;
+    --border-strong: #c6d4cf;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+
+  button,
+  textarea {
+    font: inherit;
+  }
+
+  button:focus-visible,
+  textarea:focus-visible,
+  .session-item:focus-visible {
+    outline: 3px solid rgba(240, 199, 102, .72);
+    outline-offset: 2px;
+  }
+
+  button {
+    letter-spacing: 0;
+  }
+
+  #sidebar {
+    width: 264px;
+    min-width: 264px;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+
+  #sidebar h1 {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 18px 20px 14px;
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .brand-mark {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  #new-session-btn {
+    min-height: 42px;
+    margin: 8px 16px 22px;
+    padding: 0 14px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--primary-strong);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+  }
+
+  #new-session-btn:hover {
+    border-color: var(--primary-strong);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  .sidebar-label {
+    padding: 0 20px 9px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  #session-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 10px 18px;
+  }
+
+  .session-item {
+    position: relative;
+    min-height: 44px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background .16s ease, color .16s ease;
+  }
+
+  .session-item:hover {
+    background: #f6f9f8;
+    color: var(--text);
+  }
+
+  .session-item.active {
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+    font-weight: 700;
+  }
+
+  .session-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--signal);
+  }
+
+  .session-open-btn {
+    min-width: 0;
+    min-height: 44px;
+    flex: 1;
+    padding: 12px 8px 12px 17px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .session-delete-btn {
+    width: 28px;
+    height: 28px;
+    margin-right: 7px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .session-delete-btn:hover {
+    background: var(--emergency-soft);
+    color: var(--emergency);
+  }
+
+  #main {
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  #chat-header {
+    min-height: 72px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    margin-bottom: 3px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  #chat-title {
+    max-width: min(56vw, 680px);
+    color: var(--text);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #support-btn {
+    min-height: 38px;
+    flex: 0 0 auto;
+    padding: 0 13px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+  }
+
+  #support-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  #messages {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 32px 38px;
+    background: var(--bg);
+  }
+
+  .welcome-state {
+    width: 100%;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 82px 0 32px;
+  }
+
+  .welcome-state h2 {
+    margin-bottom: 12px;
+    color: var(--text);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  .welcome-copy {
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.8;
+  }
+
+  .quick-prompts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 30px;
+  }
+
+  .quick-prompt {
+    min-height: 70px;
+    padding: 15px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .74);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.5;
+    transition: background .16s ease, border-color .16s ease, color .16s ease;
+  }
+
+  .quick-prompt:hover {
+    border-color: var(--primary);
+    background: var(--surface);
+    color: var(--primary-strong);
+  }
+
+  .privacy-note {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .msg {
+    display: flex;
+    width: 100%;
+    max-width: 920px;
+    margin: 18px auto 0;
+  }
+
+  .msg.user {
+    justify-content: flex-end;
+  }
+
+  .bubble {
+    max-width: min(70%, 680px);
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .msg.user .bubble {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .msg.assistant .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .msg.loading .bubble {
+    border: 1px dashed var(--border-strong);
+    background: #edf3f0;
+    color: var(--muted);
+  }
+
+  #input-area {
+    min-height: 80px;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 82px;
+    gap: 10px;
+    align-items: end;
+    padding: 14px 22px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  #input-area textarea {
+    width: 100%;
+    min-height: 50px;
+    max-height: 128px;
+    resize: none;
+    padding: 13px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: #fbfcfc;
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  #input-area textarea::placeholder {
+    color: #89958f;
+  }
+
+  #input-area textarea:focus {
+    border-color: var(--primary);
+    background: var(--surface);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(35, 127, 115, .12);
+  }
+
+  #send-btn {
+    min-height: 46px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    transition: background .16s ease, border-color .16s ease, opacity .16s ease;
+  }
+
+  #send-btn:hover {
+    border-color: var(--primary-strong);
+    background: var(--primary-strong);
+  }
+
+  #send-btn:disabled {
+    cursor: not-allowed;
+    opacity: .56;
+  }
+
+  #identity-panel {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  #identity-label {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  #identity-btn,
+  .auth-submit,
+  .auth-switch,
+  .auth-mode-tab {
+    min-height: 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  #identity-btn:hover,
+  .auth-submit:hover,
+  .auth-switch:hover,
+  .auth-mode-tab:hover,
+  .auth-mode-tab.active {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  #auth-dialog {
+    width: calc(100vw - 32px);
+    max-width: 460px;
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 56px rgba(36, 49, 45, .18);
+  }
+
+  #auth-dialog::backdrop {
+    background: rgba(36, 49, 45, .34);
+  }
+
+  .auth-options {
+    padding: 18px 22px 22px;
+  }
+
+  .auth-mode-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .auth-panel h3 {
+    margin-bottom: 7px;
+    color: var(--primary-strong);
+    font-size: 15px;
+  }
+
+  .auth-panel p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .auth-panel form {
+    display: grid;
+    gap: 7px;
+  }
+
+  .auth-panel label {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .auth-panel input {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: #fbfcfc;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .auth-submit {
+    margin-top: 14px;
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .auth-submit:hover {
+    background: var(--primary-strong);
+    color: #fff;
+  }
+
+  .auth-switch {
+    width: 100%;
+    margin-top: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--primary-strong);
+  }
+
+  .auth-error {
+    min-height: 21px;
+    margin-top: 8px;
+    color: var(--emergency) !important;
+  }
+
+  .account-tools {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .account-tools a,
+  .account-tools button {
+    min-height: 38px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .account-tools a:hover,
+  .account-tools button:hover {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+
+  #change-password-dialog {
+    width: calc(100vw - 32px);
+    max-width: 460px;
+    margin: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 56px rgba(36, 49, 45, .18);
+  }
+
+  #change-password-dialog::backdrop {
+    background: rgba(36, 49, 45, .34);
+  }
+
+  .password-form {
+    display: grid;
+    gap: 8px;
+    padding: 18px 22px 22px;
+  }
+
+  .password-form label {
+    margin-top: 7px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .password-form input {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: #fbfcfc;
+    color: var(--text);
+    font-size: 14px;
+  }
+
+  .password-form button[type="submit"] {
+    min-height: 42px;
+    margin-top: 12px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .password-form button[type="submit"]:disabled {
+    cursor: not-allowed;
+    opacity: .56;
+  }
+
+  .password-logout {
+    min-height: 38px;
+    border: 0;
+    background: transparent;
+    color: var(--primary-strong);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .password-hint {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  #support-dialog {
+    width: calc(100vw - 32px);
+    max-width: 520px;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    overflow: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 20px 56px rgba(36, 49, 45, .18);
+  }
+
+  #support-dialog::backdrop {
+    background: rgba(36, 49, 45, .34);
+  }
+
+  .dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 22px 15px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dialog-header h2 {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .dialog-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+  }
+
+  .dialog-close:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .support-options {
+    padding: 6px 22px;
+  }
+
+  .support-option {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .support-option:last-child {
+    border-bottom: 0;
+  }
+
+  .support-option h3 {
+    margin-bottom: 5px;
+    color: var(--primary-strong);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .support-option p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .support-option.urgent h3 {
+    color: var(--emergency);
+  }
+
+  .support-option.urgent p {
+    color: #7c4a47;
+  }
+
+  .dialog-footer {
+    padding: 14px 22px 18px;
+    background: #fafcfb;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 760px) {
+    body {
+      flex-direction: column;
+    }
+
+    #sidebar {
+      width: 100%;
+      min-width: 0;
+      max-height: 178px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-rows: auto auto auto;
+      border-right: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #sidebar h1 {
+      min-height: 58px;
+      padding: 11px 14px 8px;
+      font-size: 17px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+    }
+
+    #new-session-btn {
+      min-height: 38px;
+      margin: 10px 12px 7px 6px;
+      padding: 0 12px;
+    }
+
+    .sidebar-label {
+      grid-column: 1 / -1;
+      padding: 2px 14px 6px;
+    }
+
+    #session-list {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 0 12px 11px;
+    }
+
+    .session-item {
+      flex: 0 0 170px;
+      min-height: 40px;
+      margin-bottom: 0;
+    }
+
+    .session-open-btn {
+      min-height: 40px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    #identity-panel {
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      margin-top: 0;
+      padding: 6px 12px 10px;
+    }
+
+    #chat-header {
+      min-height: 64px;
+      padding: 10px 14px;
+    }
+
+    #chat-title {
+      max-width: 48vw;
+      font-size: 16px;
+    }
+
+    #support-btn {
+      min-height: 36px;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    #messages {
+      padding: 0 16px 24px;
+    }
+
+    .welcome-state {
+      padding-top: 40px;
+    }
+
+    .welcome-state h2 {
+      font-size: 25px;
+    }
+
+    .quick-prompts {
+      grid-template-columns: 1fr;
+      margin-top: 24px;
+    }
+
+    .quick-prompt {
+      min-height: 58px;
+    }
+
+    .bubble {
+      max-width: 88%;
+    }
+
+    #input-area {
+      min-height: 72px;
+      grid-template-columns: minmax(0, 1fr) 72px;
+      padding: 10px 12px max(10px, env(safe-area-inset-bottom));
+    }
+
+    #input-area textarea {
+      min-height: 48px;
+    }
+
+    #support-dialog {
+      width: calc(100vw - 24px);
+      max-height: calc(100dvh - 24px);
+    }
+
+    .dialog-header,
+    .support-options,
+    .dialog-footer {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<aside id="sidebar">
+  <h1><span class="brand-mark">说</span><span>有话说</span></h1>
+  <button id="new-session-btn" type="button">重新聊聊</button>
+  <p class="sidebar-label">最近聊过</p>
+  <div id="session-list" aria-label="最近会话"></div>
+  <div id="identity-panel" aria-live="polite">
+    <span id="identity-label">匿名模式</span>
+    <button id="identity-btn" type="button">账号与登录</button>
+  </div>
+</aside>
+
+<main id="main">
+  <header id="chat-header">
+    <div>
+      <p class="header-label">今天的对话</p>
+      <h2 id="chat-title">有话说</h2>
+    </div>
+    <button id="support-btn" type="button">找真人聊聊</button>
+  </header>
+
+  <div id="messages" aria-live="polite">
+    <section id="welcome-state" class="welcome-state" aria-labelledby="welcome-title">
+      <h2 id="welcome-title">今天过得怎么样？</h2>
+      <p class="welcome-copy">不用想好怎么说，想到哪儿说到哪儿。</p>
+      <div class="quick-prompts" aria-label="选择一种聊天方式">
+        <button class="quick-prompt" type="button">我只想吐槽</button>
+        <button class="quick-prompt" type="button">陪我理一理</button>
+        <button class="quick-prompt" type="button" data-mode="problem_solving">帮我想办法</button>
+        <button class="quick-prompt" type="button" data-mode="companion">有点撑不住了</button>
+      </div>
+      <p class="privacy-note">聊天会保存在会话历史中，但不会自动联系任何人或转交给真人。</p>
+    </section>
+  </div>
+
+  <div id="input-area">
+    <textarea id="input" rows="1" placeholder="慢慢说，我在听。" aria-label="输入聊天内容"></textarea>
+    <button id="send-btn" type="button" aria-label="发送消息">发送</button>
+  </div>
+</main>
+
+<dialog id="auth-dialog" aria-labelledby="auth-dialog-title">
+  <div class="dialog-header">
+    <h2 id="auth-dialog-title">选择使用方式</h2>
+    <form method="dialog">
+      <button id="close-auth-btn" class="dialog-close" type="submit" aria-label="关闭">×</button>
+    </form>
+  </div>
+  <div class="auth-options">
+    <div class="auth-mode-tabs" role="tablist" aria-label="身份模式">
+      <button id="anonymous-mode-btn" class="auth-mode-tab active" type="button" role="tab">匿名使用</button>
+      <button id="account-mode-btn" class="auth-mode-tab" type="button" role="tab">账号登录</button>
+    </div>
+    <section id="anonymous-auth-panel" class="auth-panel">
+      <h3>匿名使用</h3>
+      <p>会话只保存在当前浏览器。注册账号后，可以把当前匿名会话带走。</p>
+      <button id="use-anonymous-btn" class="auth-submit" type="button">继续匿名使用</button>
+    </section>
+    <section id="account-auth-panel" class="auth-panel" hidden>
+      <form id="auth-form">
+        <label for="auth-username">用户名</label>
+        <input id="auth-username" name="username" type="text" maxlength="100" autocomplete="username" required>
+        <label for="auth-password">密码</label>
+        <input id="auth-password" name="password" type="password" maxlength="10" autocomplete="current-password" required>
+        <button id="auth-submit-btn" class="auth-submit" type="submit">登录</button>
+      </form>
+      <button id="auth-intent-btn" class="auth-switch" type="button">还没有账号？注册</button>
+      <button id="logout-btn" class="auth-switch" type="button">退出当前账号</button>
+      <div class="account-tools">
+        <button id="change-password-btn" type="button">修改密码</button>
+        <a id="admin-link" href="/admin" hidden>进入账号管理</a>
+      </div>
+      <p id="auth-error" class="auth-error" role="alert"></p>
+    </section>
+  </div>
+</dialog>
+
+<dialog id="change-password-dialog" aria-labelledby="change-password-title">
+  <div class="dialog-header">
+    <h2 id="change-password-title">设置新密码</h2>
+    <form method="dialog">
+      <button id="close-password-btn" class="dialog-close" type="submit" aria-label="关闭">×</button>
+    </form>
+  </div>
+  <form id="change-password-form" class="password-form">
+    <p id="password-required-note" class="password-hint">请输入原密码，再设置一个不超过 10 位的新密码。</p>
+    <label for="old-password">原密码</label>
+    <input id="old-password" type="password" maxlength="10" autocomplete="current-password" required>
+    <label for="new-password">新密码</label>
+    <input id="new-password" type="password" maxlength="10" autocomplete="new-password" required>
+    <button id="change-password-submit" type="submit">保存新密码</button>
+    <button id="forced-logout-btn" class="password-logout" type="button" hidden>退出当前账号</button>
+    <p id="password-error" class="auth-error" role="alert"></p>
+  </form>
+</dialog>
+
+<dialog id="support-dialog" aria-labelledby="support-dialog-title">
+  <div class="dialog-header">
+    <h2 id="support-dialog-title">找真人聊聊</h2>
+    <form method="dialog">
+      <button id="close-support-btn" class="dialog-close" type="submit" aria-label="关闭">×</button>
+    </form>
+  </div>
+  <div class="support-options">
+    <section class="support-option">
+      <h3>联系辅导员</h3>
+      <p>适合学业、宿舍、经济困难或其他校园事务，请通过班级或学院官方渠道联系。</p>
+    </section>
+    <section class="support-option">
+      <h3>预约心理咨询</h3>
+      <p>如果低落、焦虑或痛苦持续存在，可以通过学校官方心理咨询中心预约。</p>
+    </section>
+    <section class="support-option urgent">
+      <h3>紧急求助</h3>
+      <p>如果你或他人正处于危险中，请立即联系身边可信任的人或当地紧急服务。</p>
+    </section>
+  </div>
+  <p class="dialog-footer">这里不会自动联系任何人，也不会把当前聊天内容转交给真人。</p>
+</dialog>
+
+<script>
+let currentSessionId = null;
+let loading = false;
+let authMode = localStorage.getItem('youhua_auth_mode') || 'anonymous';
+let authToken = localStorage.getItem('youhua_auth_token') || '';
+let anonymousId = localStorage.getItem('youhua_anonymous_id') || createAnonymousId();
+let currentUsername = localStorage.getItem('youhua_username') || '';
+let currentRole = localStorage.getItem('youhua_role') || 'user';
+let mustChangePassword = localStorage.getItem('youhua_must_change_password') === 'true';
+const USER_CHAT_MODES = ['companion', 'problem_solving'];
+let currentMode = 'companion';
+let sessionModes = JSON.parse(localStorage.getItem('youhua_session_modes') || '{}');
+let authIntent = 'login';
+let waitingStatusTimer = null;
+
+localStorage.setItem('youhua_anonymous_id', anonymousId);
+
+function createAnonymousId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return 'anonymous-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+}
+
+async function parseResponse(response) {
+  if (!response.ok) {
+    let detail = '请求失败：' + response.status;
+    try {
+      const body = await response.json();
+      detail = body.detail || detail;
+    } catch (error) {
+      // Keep the status fallback when the server did not return JSON.
+    }
+    const requestError = new Error(detail);
+    requestError.status = response.status;
+    throw requestError;
+  }
+  return response.json();
+}
+
+function identityHeaders(mode = authMode, token = authToken) {
+  const headers = {};
+  if (mode === 'account' && token) {
+    headers.Authorization = 'Bearer ' + token;
+  } else {
+    headers['X-Anonymous-Id'] = anonymousId;
+  }
+  return headers;
+}
+
+async function requestJson(url, options = {}, mode = authMode, token = authToken) {
+  const headers = {...identityHeaders(mode, token), ...(options.headers || {})};
+  const response = await fetch(url, {...options, headers});
+  if (response.status === 401 && authMode === 'account') {
+    authMode = 'anonymous';
+    authToken = '';
+    currentUsername = '';
+    persistAuthState();
+    renderIdentity();
+  }
+  return parseResponse(response);
+}
+
+const api = {
+  ensureAnonymous: () => requestJson('/api/auth/anonymous', {method: 'POST'}, 'anonymous', ''),
+  register: (username, password) => requestJson('/api/auth/register', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  }, 'anonymous', ''),
+  login: (username, password) => requestJson('/api/auth/login', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({username, password})
+  }, 'anonymous', ''),
+  logout: () => requestJson('/api/auth/logout', {method: 'POST'}),
+  createSession: () => requestJson('/api/sessions', {method: 'POST'}),
+  listSessions: () => requestJson('/api/sessions'),
+  getSession: (id) => requestJson(`/api/sessions/${id}`),
+  deleteSession: (id) => requestJson(`/api/sessions/${id}`, {method: 'DELETE'}),
+  chat: (id, content) => requestJson(`/api/chat/${id}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({content, mode: currentMode})
+  }),
+  streamChat: async (id, content, mode, onDelta) => {
+    const response = await fetch(`/api/chat/${id}/stream`, {
+      method: 'POST',
+      headers: {...identityHeaders(), 'Content-Type': 'application/json'},
+      body: JSON.stringify({content, mode})
+    });
+    if (!response.ok) return parseResponse(response);
+    if (!response.body || !response.body.getReader) {
+      const error = new Error('当前浏览器不支持流式读取');
+      error.fallbackAllowed = false;
+      throw error;
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let eventName = '';
+    let completed = false;
+    async function consume(block) {
+      const lines = block.split('\n');
+      let data = '';
+      for (const line of lines) {
+        if (line.startsWith('event:')) eventName = line.slice(6).trim();
+        if (line.startsWith('data:')) data += line.slice(5).trim();
+      }
+      if (!data) return;
+      const payload = JSON.parse(data);
+      if (eventName === 'delta') onDelta(payload.text || '');
+      if (eventName === 'error') throw new Error(payload.message || '流式回复失败');
+      if (eventName === 'done') completed = true;
+      eventName = '';
+    }
+    while (true) {
+      const {value, done} = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), {stream: !done});
+      const blocks = buffer.split('\n\n');
+      buffer = blocks.pop();
+      for (const block of blocks) await consume(block);
+      if (done) break;
+    }
+    if (buffer.trim()) await consume(buffer);
+    if (!completed) throw new Error('流式回复没有正常结束');
+  },
+  changePassword: (oldPassword, newPassword) => requestJson('/api/auth/change-password', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({old_password: oldPassword, new_password: newPassword})
+  }, 'account', authToken),
+};
+
+const sessionListEl = document.getElementById('session-list');
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+const newSessionBtn = document.getElementById('new-session-btn');
+const chatTitle = document.getElementById('chat-title');
+const supportBtn = document.getElementById('support-btn');
+const supportDialog = document.getElementById('support-dialog');
+const closeSupportBtn = document.getElementById('close-support-btn');
+const identityLabel = document.getElementById('identity-label');
+const identityBtn = document.getElementById('identity-btn');
+const authDialog = document.getElementById('auth-dialog');
+const closeAuthBtn = document.getElementById('close-auth-btn');
+const anonymousModeBtn = document.getElementById('anonymous-mode-btn');
+const accountModeBtn = document.getElementById('account-mode-btn');
+const anonymousAuthPanel = document.getElementById('anonymous-auth-panel');
+const accountAuthPanel = document.getElementById('account-auth-panel');
+const useAnonymousBtn = document.getElementById('use-anonymous-btn');
+const authForm = document.getElementById('auth-form');
+const authUsername = document.getElementById('auth-username');
+const authPassword = document.getElementById('auth-password');
+const authSubmitBtn = document.getElementById('auth-submit-btn');
+const authIntentBtn = document.getElementById('auth-intent-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const authError = document.getElementById('auth-error');
+const changePasswordBtn = document.getElementById('change-password-btn');
+const adminLink = document.getElementById('admin-link');
+const changePasswordDialog = document.getElementById('change-password-dialog');
+const closePasswordBtn = document.getElementById('close-password-btn');
+const changePasswordForm = document.getElementById('change-password-form');
+const oldPasswordEl = document.getElementById('old-password');
+const newPasswordEl = document.getElementById('new-password');
+const passwordSubmitBtn = document.getElementById('change-password-submit');
+const passwordError = document.getElementById('password-error');
+const passwordRequiredNote = document.getElementById('password-required-note');
+const forcedLogoutBtn = document.getElementById('forced-logout-btn');
+
+function persistAuthState() {
+  localStorage.setItem('youhua_auth_mode', authMode);
+  localStorage.setItem('youhua_anonymous_id', anonymousId);
+  if (authToken) localStorage.setItem('youhua_auth_token', authToken);
+  else localStorage.removeItem('youhua_auth_token');
+  if (currentUsername) localStorage.setItem('youhua_username', currentUsername);
+  else localStorage.removeItem('youhua_username');
+  localStorage.setItem('youhua_role', currentRole);
+  localStorage.setItem('youhua_must_change_password', String(mustChangePassword));
+  localStorage.setItem('youhua_session_modes', JSON.stringify(sessionModes));
+}
+
+function renderIdentity() {
+  identityLabel.textContent = authMode === 'account'
+    ? '账号：' + currentUsername
+    : '匿名模式（当前浏览器）';
+  identityBtn.textContent = authMode === 'account' ? '切换身份' : '账号与登录';
+  changePasswordBtn.hidden = authMode !== 'account';
+  adminLink.hidden = authMode !== 'account' || !['admin', 'super_admin'].includes(currentRole);
+}
+
+function showAuthMode(mode) {
+  const account = mode === 'account';
+  anonymousAuthPanel.hidden = account;
+  accountAuthPanel.hidden = !account;
+  anonymousModeBtn.classList.toggle('active', !account);
+  accountModeBtn.classList.toggle('active', account);
+  if (account) authUsername.focus();
+}
+
+function openAuthPanel() {
+  authError.textContent = '';
+  showAuthMode(authMode === 'account' ? 'account' : 'anonymous');
+  if (typeof authDialog.showModal === 'function') authDialog.showModal();
+  else authDialog.setAttribute('open', '');
+}
+
+function closeAuthPanel() {
+  if (typeof authDialog.close === 'function') authDialog.close();
+  else authDialog.removeAttribute('open');
+}
+
+async function switchToAnonymous() {
+  authMode = 'anonymous';
+  authToken = '';
+  currentUsername = '';
+  currentRole = 'user';
+  mustChangePassword = false;
+  if (typeof changePasswordDialog.close === 'function' && changePasswordDialog.open) {
+    changePasswordDialog.close();
+  }
+  persistAuthState();
+  await api.ensureAnonymous();
+  closeAuthPanel();
+  await createSession();
+  renderIdentity();
+}
+
+async function applyAccountAuth(auth, keepCurrentSession) {
+  authMode = 'account';
+  authToken = auth.token;
+  currentUsername = auth.username || '';
+  currentRole = auth.role || 'user';
+  mustChangePassword = Boolean(auth.must_change_password);
+  persistAuthState();
+  closeAuthPanel();
+  renderIdentity();
+  if (mustChangePassword) {
+    openChangePassword(true);
+    return;
+  }
+  if (keepCurrentSession && currentSessionId) {
+    try {
+      await openSession(currentSessionId);
+      return;
+    } catch (error) {
+      // The current anonymous session may have been removed by an older server.
+    }
+  }
+  await createSession();
+}
+
+function openChangePassword(forced = false) {
+  passwordError.textContent = '';
+  passwordRequiredNote.textContent = forced
+    ? '密码已被重置。请先输入原密码 123，再设置一个不超过 10 位的新密码。'
+    : '请输入原密码，再设置一个不超过 10 位的新密码。';
+  closePasswordBtn.hidden = forced;
+  forcedLogoutBtn.hidden = !forced;
+  if (typeof changePasswordDialog.showModal === 'function') changePasswordDialog.showModal();
+  else changePasswordDialog.setAttribute('open', '');
+  oldPasswordEl.focus();
+}
+
+function closeChangePassword() {
+  if (mustChangePassword) return;
+  if (typeof changePasswordDialog.close === 'function') changePasswordDialog.close();
+  else changePasswordDialog.removeAttribute('open');
+}
+
+async function submitChangePassword(event) {
+  event.preventDefault();
+  passwordError.textContent = '';
+  passwordSubmitBtn.disabled = true;
+  try {
+    const auth = await api.changePassword(oldPasswordEl.value, newPasswordEl.value);
+    authMode = 'account';
+    authToken = auth.token;
+    currentUsername = auth.username || currentUsername;
+    currentRole = auth.role || currentRole;
+    mustChangePassword = false;
+    persistAuthState();
+    if (typeof changePasswordDialog.close === 'function') changePasswordDialog.close();
+    else changePasswordDialog.removeAttribute('open');
+    renderIdentity();
+    if (!currentSessionId) await createSession();
+  } catch (error) {
+    passwordError.textContent = error.message;
+  } finally {
+    passwordSubmitBtn.disabled = false;
+  }
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  authError.textContent = '';
+  authSubmitBtn.disabled = true;
+  try {
+    const auth = authIntent === 'register'
+      ? await api.register(authUsername.value, authPassword.value)
+      : await api.login(authUsername.value, authPassword.value);
+    await applyAccountAuth(auth, authIntent === 'register');
+  } catch (error) {
+    authError.textContent = error.message;
+  } finally {
+    authSubmitBtn.disabled = false;
+  }
+}
+
+async function logoutAccount() {
+  try {
+    await api.logout();
+  } catch (error) {
+    authError.textContent = error.message;
+    return;
+  }
+  await switchToAnonymous();
+}
+
+function bindQuickPrompts() {
+  document.querySelectorAll('.quick-prompt').forEach((button) => {
+    button.onclick = () => {
+      setConversationMode(button.dataset.mode || 'companion');
+      inputEl.focus();
+    };
+  });
+}
+
+function setConversationMode(mode) {
+  currentMode = USER_CHAT_MODES.includes(mode) ? mode : 'companion';
+  if (currentSessionId) {
+    sessionModes[currentSessionId] = currentMode;
+    persistAuthState();
+  }
+}
+
+function renderWelcomeState() {
+  messagesEl.innerHTML = `
+    <section id="welcome-state" class="welcome-state" aria-labelledby="welcome-title">
+      <h2 id="welcome-title">今天过得怎么样？</h2>
+      <p class="welcome-copy">不用想好怎么说，想到哪儿说到哪儿。</p>
+      <div class="quick-prompts" aria-label="选择一种聊天方式">
+        <button class="quick-prompt" type="button">我只想吐槽</button>
+        <button class="quick-prompt" type="button">陪我理一理</button>
+        <button class="quick-prompt" type="button" data-mode="problem_solving">帮我想办法</button>
+        <button class="quick-prompt" type="button" data-mode="companion">有点撑不住了</button>
+      </div>
+      <p class="privacy-note">聊天会保存在会话历史中，但不会自动联系任何人或转交给真人。</p>
+    </section>
+  `;
+  bindQuickPrompts();
+}
+
+function openSupportPanel() {
+  if (typeof supportDialog.showModal === 'function') {
+    supportDialog.showModal();
+  } else {
+    supportDialog.setAttribute('open', '');
+  }
+  closeSupportBtn.focus();
+}
+
+function closeSupportPanel() {
+  if (typeof supportDialog.close === 'function') {
+    supportDialog.close();
+  } else {
+    supportDialog.removeAttribute('open');
+  }
+}
+
+async function loadSessions(activeId) {
+  const sessions = await api.listSessions();
+  sessionListEl.innerHTML = '';
+  for (const s of sessions) {
+    const div = document.createElement('div');
+    div.className = 'session-item' + (s.session_id === activeId ? ' active' : '');
+    const openButton = document.createElement('button');
+    openButton.className = 'session-open-btn';
+    openButton.type = 'button';
+    openButton.textContent = s.title;
+    openButton.setAttribute('aria-current', s.session_id === activeId ? 'page' : 'false');
+    openButton.onclick = () => openSession(s.session_id);
+    div.appendChild(openButton);
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'session-delete-btn';
+    deleteButton.type = 'button';
+    deleteButton.textContent = '×';
+    deleteButton.title = '删除会话';
+    deleteButton.setAttribute('aria-label', `删除会话：${s.title}`);
+    deleteButton.onclick = (event) => {
+      event.stopPropagation();
+      deleteSession(s.session_id);
+    };
+    deleteButton.onkeydown = (event) => event.stopPropagation();
+    div.appendChild(deleteButton);
+    sessionListEl.appendChild(div);
+  }
+}
+
+async function refreshSessionsSafely(activeId) {
+  try {
+    await loadSessions(activeId);
+  } catch (error) {
+    console.warn('会话列表刷新失败', error);
+  }
+}
+
+async function openSession(id) {
+  currentSessionId = id;
+  currentMode = sessionModes[id] || 'companion';
+  location.hash = `session-${id}`;
+  const detail = await api.getSession(id);
+  chatTitle.textContent = detail.title;
+  messagesEl.innerHTML = '';
+  if (detail.messages.length === 0) {
+    renderWelcomeState();
+  } else {
+    for (const m of detail.messages) {
+      appendMsg(m.role, m.content);
+    }
+  }
+  await loadSessions(id);
+}
+
+async function createSession() {
+  const s = await api.createSession();
+  currentSessionId = s.session_id;
+  location.hash = `session-${s.session_id}`;
+  currentMode = 'companion';
+  sessionModes[currentSessionId] = currentMode;
+  chatTitle.textContent = '有话说';
+  renderWelcomeState();
+  await loadSessions(s.session_id);
+}
+
+async function deleteSession(sessionId) {
+  if (!window.confirm('删除后将不再出现在你的会话列表中，确定继续吗？')) return;
+  try {
+    await api.deleteSession(sessionId);
+    delete sessionModes[sessionId];
+    persistAuthState();
+    if (sessionId === currentSessionId) {
+      await createSession();
+    } else {
+      await loadSessions(currentSessionId);
+    }
+  } catch (error) {
+    window.alert(error.message || '删除会话失败，请稍后重试。');
+  }
+}
+
+function appendMsg(role, content, isLoading = false) {
+  document.getElementById('welcome-state')?.remove();
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role + (isLoading ? ' loading' : '');
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = content;
+  wrap.appendChild(bubble);
+  messagesEl.appendChild(wrap);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return wrap;
+}
+
+function startWaitingStatus(mode, assistantBubble) {
+  stopWaitingStatus();
+  const messages = mode === 'problem_solving'
+    ? ['正在整理可行的办法...', '正在梳理关键情况...']
+    : ['正在理解你的意思...', '我在认真听你说...'];
+  let index = 0;
+  assistantBubble.textContent = messages[index];
+  waitingStatusTimer = window.setInterval(() => {
+    index = (index + 1) % messages.length;
+    assistantBubble.textContent = messages[index];
+  }, 1500);
+}
+
+function stopWaitingStatus() {
+  if (waitingStatusTimer !== null) {
+    window.clearInterval(waitingStatusTimer);
+    waitingStatusTimer = null;
+  }
+}
+
+async function send() {
+  const content = inputEl.value.trim();
+  if (!content || loading || !currentSessionId) return;
+  inputEl.value = '';
+  appendMsg('user', content);
+  const assistantWrap = appendMsg('assistant', '', true);
+  const assistantBubble = assistantWrap.querySelector('.bubble');
+  startWaitingStatus(currentMode, assistantBubble);
+  loading = true;
+  sendBtn.disabled = true;
+  try {
+    try {
+      await api.streamChat(currentSessionId, content, currentMode, (delta) => {
+        const wasWaiting = assistantWrap.classList.contains('loading');
+        stopWaitingStatus();
+        assistantWrap.classList.remove('loading');
+        if (wasWaiting) assistantBubble.textContent = '';
+        assistantBubble.textContent += delta;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      });
+    } catch (error) {
+      messagesEl.removeChild(messagesEl.lastChild);
+      appendMsg('assistant', error.message || '我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。');
+      return;
+    }
+    assistantWrap.classList.remove('loading');
+    location.hash = `session-${currentSessionId}`;
+    await refreshSessionsSafely(currentSessionId);
+    if (chatTitle.textContent === '有话说') chatTitle.textContent = content.slice(0, 20);
+  } finally {
+    stopWaitingStatus();
+    loading = false;
+    sendBtn.disabled = false;
+  }
+}
+
+sendBtn.onclick = send;
+newSessionBtn.onclick = createSession;
+supportBtn.onclick = openSupportPanel;
+closeSupportBtn.onclick = closeSupportPanel;
+identityBtn.onclick = openAuthPanel;
+closeAuthBtn.onclick = closeAuthPanel;
+anonymousModeBtn.onclick = () => showAuthMode('anonymous');
+accountModeBtn.onclick = () => showAuthMode('account');
+useAnonymousBtn.onclick = switchToAnonymous;
+authIntentBtn.onclick = () => {
+  authIntent = authIntent === 'login' ? 'register' : 'login';
+  authSubmitBtn.textContent = authIntent === 'register' ? '注册并绑定当前会话' : '登录';
+  authIntentBtn.textContent = authIntent === 'register' ? '已有账号？登录' : '还没有账号？注册';
+  authPassword.autocomplete = authIntent === 'register' ? 'new-password' : 'current-password';
+};
+authForm.addEventListener('submit', submitAuth);
+logoutBtn.onclick = logoutAccount;
+changePasswordBtn.onclick = () => openChangePassword(false);
+closePasswordBtn.onclick = closeChangePassword;
+changePasswordForm.addEventListener('submit', submitChangePassword);
+forcedLogoutBtn.onclick = logoutAccount;
+supportDialog.addEventListener('click', (event) => {
+  if (event.target === supportDialog) closeSupportPanel();
+});
+authDialog.addEventListener('click', (event) => {
+  if (event.target === authDialog) closeAuthPanel();
+});
+inputEl.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    send();
+  }
+});
+changePasswordDialog.addEventListener('click', (event) => {
+  if (event.target === changePasswordDialog) closeChangePassword();
+});
+changePasswordDialog.addEventListener('cancel', (event) => {
+  if (mustChangePassword) event.preventDefault();
+});
+bindQuickPrompts();
+renderIdentity();
+
+(async function init() {
+  await api.ensureAnonymous();
+  if (authMode === 'account' && mustChangePassword) {
+    renderIdentity();
+    openChangePassword(true);
+    return;
+  }
+  const hash = location.hash;
+  const match = hash.match(/session-([\w-]+)/);
+  if (match) {
+    try {
+      await openSession(match[1]);
+    } catch (error) {
+      await createSession();
+    }
+  } else {
+    await createSession();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号管理 - 有话说</title>
+  <style>
+    :root {
+      --bg: #f2f6f4;
+      --surface: #fff;
+      --text: #24312d;
+      --muted: #66756f;
+      --primary: #237f73;
+      --primary-strong: #19685f;
+      --primary-soft: #e7f2ef;
+      --border: #dce5e1;
+      --border-strong: #c6d4cf;
+      --signal: #f0c766;
+      --danger: #b94f4b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    button, input, select { font: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid rgba(240, 199, 102, .72);
+      outline-offset: 2px;
+    }
+    .page-shell { width: min(1040px, calc(100% - 32px)); margin: 0 auto; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 76px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+    }
+    .brand h1 { margin: 0; font-size: 18px; }
+    .brand p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; gap: 8px; }
+    .top-actions a, .top-actions button, .search-form button, .reset-btn {
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .top-actions a:hover, .top-actions button:hover, .search-form button:hover {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+      color: var(--primary-strong);
+    }
+    .intro { padding: 42px 0 25px; }
+    .eyebrow { margin: 0 0 8px; color: var(--primary-strong); font-size: 12px; font-weight: 800; }
+    .intro h2 { margin: 0; font-size: 30px; line-height: 1.3; }
+    .intro p { max-width: 600px; margin: 10px 0 0; color: var(--muted); line-height: 1.7; }
+    .toolbar {
+      display: flex;
+      align-items: end;
+      gap: 10px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .search-form { display: flex; flex: 1; gap: 10px; }
+    .search-form label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .search-form input {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      background: #fbfcfc;
+      color: var(--text);
+    }
+    .search-form button { border-color: var(--primary); background: var(--primary); color: #fff; }
+    .search-form button:hover { background: var(--primary-strong); color: #fff; }
+    #status { min-height: 21px; margin: 12px 0; color: var(--muted); font-size: 13px; }
+    #status.error { color: var(--danger); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+    table { width: 100%; border-collapse: collapse; min-width: 680px; }
+    th, td { padding: 14px 16px; border-bottom: 1px solid var(--border); text-align: left; font-size: 13px; }
+    th { color: var(--muted); background: #fafcfb; font-size: 12px; font-weight: 800; }
+    tr:last-child td { border-bottom: 0; }
+    .role-label { color: var(--primary-strong); font-weight: 800; }
+    .role-select { min-height: 34px; padding: 0 8px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); color: var(--text); }
+    .reset-btn { border-color: #e5bfbd; color: var(--danger); }
+    .reset-btn:hover { border-color: var(--danger); background: #fff3f2; }
+    .reset-btn:disabled, .role-select:disabled { cursor: not-allowed; opacity: .55; }
+    .empty { padding: 42px 16px; color: var(--muted); text-align: center; }
+    .notice { margin: 18px 0 40px; padding: 14px 16px; border-left: 3px solid var(--signal); background: #fffdf5; color: var(--muted); font-size: 13px; line-height: 1.7; }
+    .account-button { padding: 0; border: 0; background: transparent; color: var(--primary-strong); cursor: pointer; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+    .account-button:hover { color: var(--primary); }
+    #account-detail { margin-top: 22px; }
+    .detail-head { display: flex; align-items: start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    .detail-head h3 { margin: 0; font-size: 20px; }
+    .detail-head p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .back-btn { min-height: 36px; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 700; }
+    .back-btn:hover { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-strong); }
+    .detail-layout { display: grid; grid-template-columns: minmax(210px, .34fr) minmax(0, .66fr); gap: 12px; }
+    .detail-panel { min-width: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+    .detail-panel h4 { margin: 0; padding: 13px 15px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+    #session-detail-list { padding: 7px; }
+    .session-detail-item { display: flex; align-items: center; gap: 4px; }
+    .session-detail-button { width: 100%; padding: 10px; border: 0; border-radius: 7px; background: transparent; color: var(--text); cursor: pointer; text-align: left; }
+    .session-detail-button:hover, .session-detail-button.active { background: var(--primary-soft); color: var(--primary-strong); }
+    .session-detail-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 800; }
+    .session-detail-meta { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .session-delete-forever-btn { width: 30px; height: 30px; flex: 0 0 auto; border: 0; border-radius: 6px; background: transparent; color: var(--danger); cursor: pointer; font-size: 18px; line-height: 1; }
+    .session-delete-forever-btn:hover { background: #fff3f2; }
+    #message-detail-list { display: grid; gap: 10px; max-height: 520px; overflow-y: auto; padding: 15px; }
+    .message-detail { max-width: 84%; padding: 10px 12px; border-radius: 8px; background: #f2f6f4; color: var(--text); font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+    .message-detail.user { justify-self: end; background: var(--primary); color: #fff; }
+    .message-detail-meta { display: block; margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .message-detail.user .message-detail-meta { color: rgba(255,255,255,.76); }
+    .detail-empty { padding: 24px 15px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    #load-more-sessions { width: calc(100% - 14px); min-height: 34px; margin: 0 7px 7px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--surface); color: var(--primary-strong); cursor: pointer; font-size: 12px; font-weight: 700; }
+    #load-more-sessions:hover { border-color: var(--primary); background: var(--primary-soft); }
+    @media (max-width: 640px) {
+      .page-shell { width: min(100% - 24px, 1040px); }
+      .topbar { align-items: flex-start; padding: 14px 0; }
+      .top-actions { flex-direction: column; }
+      .intro { padding-top: 30px; }
+      .intro h2 { font-size: 26px; }
+      .toolbar { align-items: stretch; padding: 12px; }
+      .search-form { flex-direction: column; }
+      .detail-layout { grid-template-columns: 1fr; }
+      #message-detail-list { max-height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">说</span>
+        <div><h1>有话说</h1><p>受限账号管理</p></div>
+      </div>
+      <nav class="top-actions" aria-label="页面操作">
+        <a href="/">返回聊天</a>
+        <button id="logout-btn" type="button">退出登录</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro">
+        <p class="eyebrow">ACCOUNT CONTROL</p>
+        <h2>账号管理</h2>
+        <p>普通管理员只能搜索用户名和重置密码；总管可以只读查看指定账号的会话和完整消息。</p>
+      </section>
+
+      <section class="toolbar" aria-label="账号搜索">
+        <form id="search-form" class="search-form">
+          <label for="query">搜索用户名</label>
+          <input id="query" type="search" maxlength="100" placeholder="搜索用户名" autocomplete="off">
+          <button type="submit">搜索</button>
+        </form>
+      </section>
+      <p id="status" role="status"></p>
+
+      <section class="table-wrap" aria-label="账号列表">
+        <table>
+          <thead><tr><th>用户名</th><th>角色</th><th>改密状态</th><th>账号操作</th></tr></thead>
+          <tbody id="account-list"></tbody>
+        </table>
+      </section>
+      <section id="account-detail" hidden aria-live="polite">
+        <div class="detail-head">
+          <div><h3 id="detail-title">用户详情</h3><p id="detail-subtitle">总管只读查看</p></div>
+          <button id="back-to-accounts" class="back-btn" type="button">返回账号列表</button>
+        </div>
+        <div class="detail-layout">
+          <section class="detail-panel" aria-label="用户会话">
+            <h4>会话列表</h4>
+            <div id="session-detail-list"></div>
+            <button id="load-more-sessions" type="button" hidden>加载更多会话</button>
+          </section>
+          <section class="detail-panel" aria-label="会话消息">
+            <h4 id="message-detail-title">选择一个会话</h4>
+            <div id="message-detail-list"><p class="detail-empty">点击左侧会话后查看完整消息。</p></div>
+          </section>
+        </div>
+      </section>
+      <p class="notice">重置密码后，用户的密码会变为 123，并且下一次进入聊天前必须先设置新密码。总管账号不可重置、降权或删除。</p>
+    </main>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('youhua_auth_token') || '';
+    const currentRole = localStorage.getItem('youhua_role') || 'user';
+    if (!token || !['admin', 'super_admin'].includes(currentRole)) {
+      document.body.innerHTML = '<main style="max-width:520px;margin:18vh auto;padding:24px;text-align:center;color:#66756f;font-family:system-ui,sans-serif"><h1 style="color:#24312d;font-size:24px">需要管理员账号</h1><p>请从聊天页使用管理员账号登录后再进入这里。</p><a href="/" style="color:#19685f;font-weight:700">返回聊天页</a></main>';
+      throw new Error('admin session required');
+    }
+    const listEl = document.getElementById('account-list');
+    const statusEl = document.getElementById('status');
+    const queryEl = document.getElementById('query');
+    const accountDetailEl = document.getElementById('account-detail');
+    const detailTitleEl = document.getElementById('detail-title');
+    const detailSubtitleEl = document.getElementById('detail-subtitle');
+    const sessionDetailListEl = document.getElementById('session-detail-list');
+    const messageDetailTitleEl = document.getElementById('message-detail-title');
+    const messageDetailListEl = document.getElementById('message-detail-list');
+    const currentIsSuperAdmin = currentRole === 'super_admin';
+    const loadMoreSessionsBtn = document.getElementById('load-more-sessions');
+    let selectedAccount = null;
+    let sessionOffset = 0;
+    const sessionPageSize = 50;
+
+    function setStatus(text, isError = false) {
+      statusEl.textContent = text;
+      statusEl.classList.toggle('error', isError);
+    }
+
+    async function request(url, options = {}) {
+      const headers = {'Authorization': 'Bearer ' + token, ...(options.headers || {})};
+      const response = await fetch(url, {...options, headers});
+      if (!response.ok) {
+        let detail = '请求失败：' + response.status;
+        try { detail = (await response.json()).detail || detail; } catch (error) {}
+        const requestError = new Error(detail);
+        requestError.status = response.status;
+        throw requestError;
+      }
+      return response.json();
+    }
+
+    function roleText(role) {
+      return role === 'super_admin' ? '总管' : role === 'admin' ? '管理员' : '普通账号';
+    }
+
+    function renderAccounts(accounts) {
+      listEl.innerHTML = '';
+      if (!accounts.length) {
+        listEl.innerHTML = '<tr><td class="empty" colspan="4">没有找到匹配账号</td></tr>';
+        return;
+      }
+      for (const account of accounts) {
+        const row = document.createElement('tr');
+        const roleCell = document.createElement('td');
+        if (account.role === 'super_admin') {
+          roleCell.innerHTML = '<span class="role-label">总管</span>';
+        } else if (currentIsSuperAdmin) {
+          const select = document.createElement('select');
+          select.className = 'role-select';
+          select.innerHTML = '<option value="user">普通账号</option><option value="admin">管理员</option>';
+          select.value = account.role;
+          select.onchange = () => updateRole(account, select);
+          roleCell.appendChild(select);
+        } else {
+          roleCell.textContent = roleText(account.role);
+        }
+        const statusCell = account.must_change_password ? '下次登录需改密' : '正常';
+        const actionCell = document.createElement('td');
+        const resetButton = document.createElement('button');
+        resetButton.className = 'reset-btn';
+        resetButton.type = 'button';
+        resetButton.textContent = '重置为 123';
+        resetButton.disabled = account.role !== 'user';
+        resetButton.onclick = () => resetPassword(account);
+        actionCell.appendChild(resetButton);
+        const usernameCell = document.createElement('td');
+        if (currentIsSuperAdmin) {
+          const accountButton = document.createElement('button');
+          accountButton.className = 'account-button';
+          accountButton.type = 'button';
+          accountButton.textContent = account.username;
+          accountButton.title = '查看该账号的会话和消息';
+          accountButton.onclick = () => showUserSessions(account);
+          usernameCell.appendChild(accountButton);
+        } else {
+          usernameCell.textContent = account.username;
+        }
+        row.appendChild(usernameCell);
+        row.appendChild(roleCell);
+        const statusNode = document.createElement('td');
+        statusNode.textContent = statusCell;
+        row.appendChild(statusNode);
+        row.appendChild(actionCell);
+        listEl.appendChild(row);
+      }
+    }
+
+    function showAccountList() {
+      accountDetailEl.hidden = true;
+      selectedAccount = null;
+      loadMoreSessionsBtn.hidden = true;
+      document.querySelector('.table-wrap').hidden = false;
+      document.querySelector('.toolbar').hidden = false;
+      document.querySelector('.notice').hidden = false;
+      setStatus('');
+    }
+
+    async function loadUserSessions(account, reset = false) {
+      if (!currentIsSuperAdmin) return;
+      if (reset) {
+        selectedAccount = account;
+        sessionOffset = 0;
+        sessionDetailListEl.innerHTML = '<p class="detail-empty">正在加载会话…</p>';
+        messageDetailTitleEl.textContent = '选择一个会话';
+        messageDetailListEl.innerHTML = '<p class="detail-empty">点击左侧会话后查看完整消息。</p>';
+      }
+      try {
+        const sessions = await request('/api/admin/users/' + encodeURIComponent(account.id) + '/sessions?limit=' + sessionPageSize + '&offset=' + sessionOffset);
+        if (reset) sessionDetailListEl.innerHTML = '';
+        if (!sessions.length && reset) {
+          sessionDetailListEl.innerHTML = '<p class="detail-empty">该账号还没有会话。</p>';
+          loadMoreSessionsBtn.hidden = true;
+          return;
+        }
+        for (const session of sessions) {
+          const item = document.createElement('div');
+          item.className = 'session-detail-item';
+          const button = document.createElement('button');
+          button.className = 'session-detail-button';
+          button.type = 'button';
+          button.innerHTML = `<span class="session-detail-title"></span><span class="session-detail-meta"></span>`;
+          button.querySelector('.session-detail-title').textContent = session.title;
+          const deletedStatus = session.deleted_at ? ' · 已被用户删除' : '';
+          button.querySelector('.session-detail-meta').textContent = `${session.message_count} 条消息 · ${formatDate(session.updated_at)}${deletedStatus}`;
+          button.onclick = () => showSessionMessages(session, button);
+          item.appendChild(button);
+          if (currentIsSuperAdmin && session.deleted_at) {
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'session-delete-forever-btn';
+            deleteButton.type = 'button';
+            deleteButton.textContent = '×';
+            deleteButton.title = '永久删除会话';
+            deleteButton.setAttribute('aria-label', `永久删除会话：${session.title}`);
+            deleteButton.onclick = () => permanentlyDeleteSession(session);
+            item.appendChild(deleteButton);
+          }
+          sessionDetailListEl.appendChild(item);
+        }
+        sessionOffset += sessions.length;
+        loadMoreSessionsBtn.hidden = sessions.length < sessionPageSize;
+      } catch (error) {
+        if (reset) sessionDetailListEl.innerHTML = '';
+        const empty = document.createElement('p');
+        empty.className = 'detail-empty';
+        empty.textContent = error.message;
+        sessionDetailListEl.appendChild(empty);
+      }
+    }
+
+    async function showUserSessions(account) {
+      if (!currentIsSuperAdmin) return;
+      document.querySelector('.table-wrap').hidden = true;
+      document.querySelector('.toolbar').hidden = true;
+      document.querySelector('.notice').hidden = true;
+      accountDetailEl.hidden = false;
+      detailTitleEl.textContent = account.username;
+      detailSubtitleEl.textContent = '总管只读查看会话和完整消息';
+      await loadUserSessions(account, true);
+    }
+
+    function formatDate(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? value : date.toLocaleString('zh-CN');
+    }
+
+    async function showSessionMessages(session, button) {
+      document.querySelectorAll('.session-detail-button').forEach((item) => item.classList.remove('active'));
+      button.classList.add('active');
+      messageDetailTitleEl.textContent = session.title;
+      messageDetailListEl.innerHTML = '<p class="detail-empty">正在加载消息…</p>';
+      try {
+        const detail = await request('/api/admin/sessions/' + encodeURIComponent(session.session_id) + '/messages');
+        messageDetailListEl.innerHTML = '';
+        if (!detail.messages.length) {
+          messageDetailListEl.innerHTML = '<p class="detail-empty">该会话还没有消息。</p>';
+          return;
+        }
+        for (const message of detail.messages) {
+          const bubble = document.createElement('div');
+          bubble.className = 'message-detail ' + message.role;
+          bubble.textContent = message.content;
+          const meta = document.createElement('small');
+          meta.className = 'message-detail-meta';
+          meta.textContent = `${message.role === 'user' ? detail.username : '有话说'} · ${formatDate(message.created_at)}`;
+          bubble.appendChild(meta);
+          messageDetailListEl.appendChild(bubble);
+        }
+      } catch (error) {
+        messageDetailListEl.innerHTML = '';
+        const empty = document.createElement('p');
+        empty.className = 'detail-empty';
+        empty.textContent = error.message;
+        messageDetailListEl.appendChild(empty);
+      }
+    }
+
+    async function permanentlyDeleteSession(session) {
+      if (!window.confirm(`确定永久删除“${session.title}”及其全部消息吗？此操作无法撤销。`)) return;
+      try {
+        await request('/api/admin/sessions/' + encodeURIComponent(session.session_id), {method: 'DELETE'});
+        setStatus('会话已永久删除。');
+        await loadUserSessions(selectedAccount, true);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function loadAccounts(event) {
+      event?.preventDefault();
+      setStatus('正在查询…');
+      try {
+        const accounts = await request('/api/admin/users?query=' + encodeURIComponent(queryEl.value.trim()));
+        renderAccounts(accounts);
+        setStatus(`已找到 ${accounts.length} 个账号`);
+      } catch (error) {
+        renderAccounts([]);
+        setStatus(error.message, true);
+      }
+    }
+
+    async function resetPassword(account) {
+      if (!window.confirm(`确定把“${account.username}”的密码重置为 123 吗？`)) return;
+      try {
+        await request('/api/admin/users/' + encodeURIComponent(account.id) + '/reset-password', {method: 'POST'});
+        setStatus('密码已重置，用户下次登录必须修改密码。');
+        await loadAccounts();
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function updateRole(account, select) {
+      const previous = account.role;
+      try {
+        const updated = await request('/api/admin/users/' + encodeURIComponent(account.id) + '/role', {
+          method: 'PATCH',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({role: select.value})
+        });
+        account.role = updated.role;
+        setStatus('管理员权限已更新。');
+        await loadAccounts();
+      } catch (error) {
+        select.value = previous;
+        setStatus(error.message, true);
+      }
+    }
+
+    document.getElementById('search-form').addEventListener('submit', loadAccounts);
+    document.getElementById('back-to-accounts').onclick = showAccountList;
+    loadMoreSessionsBtn.onclick = () => loadUserSessions(selectedAccount);
+    document.getElementById('logout-btn').onclick = async () => {
+      try { await request('/api/auth/logout', {method: 'POST'}); } catch (error) {}
+      localStorage.removeItem('youhua_auth_token');
+      localStorage.removeItem('youhua_username');
+      localStorage.setItem('youhua_auth_mode', 'anonymous');
+      location.href = '/';
+    };
+    loadAccounts();
+  </script>
+</body>
+</html>

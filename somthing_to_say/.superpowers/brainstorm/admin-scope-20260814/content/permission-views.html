@@ -1,0 +1,39 @@
+<h2>同一个登录入口，按角色进入不同管理能力</h2>
+<p class="subtitle">请选择你更认可的查看方式。普通管理员保持受限，总管才拥有用户会话查看权。</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">普通管理员 / 账号管理</div>
+    <div class="mockup-body" style="background:#f6faf8;padding:16px;color:#24312d;">
+      <div style="display:flex;gap:8px;align-items:center;border-bottom:1px solid #dce5e1;padding-bottom:12px;">
+        <strong style="font-size:16px;">有话说</strong>
+        <span style="margin-left:auto;border:1px solid #c6d4cf;border-radius:6px;padding:6px 9px;font-size:12px;">返回聊天</span>
+      </div>
+      <div style="padding:20px 0 12px;"><small style="color:#237f73;font-weight:700;">ACCOUNT CONTROL</small><h3 style="margin:6px 0;font-size:22px;">账号管理</h3><p style="margin:0;color:#66756f;font-size:12px;line-height:1.6;">搜索用户名、重置普通用户密码。看不到会话和消息。</p></div>
+      <div style="display:flex;gap:8px;background:white;border:1px solid #dce5e1;border-radius:7px;padding:10px;"><span style="flex:1;border:1px solid #c6d4cf;border-radius:5px;padding:8px;color:#89958f;font-size:12px;">搜索用户名</span><span style="background:#237f73;color:white;border-radius:5px;padding:8px 12px;font-size:12px;">搜索</span></div>
+      <div style="margin-top:12px;background:white;border:1px solid #dce5e1;border-radius:7px;overflow:hidden;font-size:12px;"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:10px;background:#fafcfb;color:#66756f;"><span>用户名</span><span>角色</span><span>操作</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:12px 10px;border-top:1px solid #dce5e1;align-items:center;"><strong>学生A</strong><span>普通账号</span><span style="color:#b94f4b;">重置为 123</span></div></div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">总管 / 账号与会话管理</div>
+    <div class="mockup-body" style="background:#f6faf8;padding:16px;color:#24312d;">
+      <div style="display:flex;gap:8px;align-items:center;border-bottom:1px solid #dce5e1;padding-bottom:12px;">
+        <strong style="font-size:16px;">有话说</strong><span style="font-size:11px;color:#237f73;">总管模式</span>
+        <span style="margin-left:auto;border:1px solid #c6d4cf;border-radius:6px;padding:6px 9px;font-size:12px;">返回账号列表</span>
+      </div>
+      <div style="padding:20px 0 12px;"><small style="color:#237f73;font-weight:700;">SUPER ADMIN</small><h3 style="margin:6px 0;font-size:22px;">查看用户</h3><p style="margin:0;color:#66756f;font-size:12px;line-height:1.6;">点击账号进入详情，只显示该用户的会话标题和消息内容。</p></div>
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:8px;background:white;border:1px solid #dce5e1;border-radius:7px;padding:12px;font-size:12px;"><span style="color:#66756f;">用户名</span><strong>学生A</strong><span style="color:#66756f;">会话</span><div><div style="padding:8px;border:1px solid #e7f2ef;background:#e7f2ef;border-radius:5px;">期末压力 · 3 条消息</div><div style="padding:8px;border-bottom:1px solid #dce5e1;">宿舍沟通 · 6 条消息</div></div></div>
+      <div style="margin-top:12px;background:white;border:1px solid #dce5e1;border-radius:7px;padding:12px;font-size:12px;"><div style="color:#66756f;margin-bottom:8px;">期末压力 / 完整对话</div><div style="display:grid;gap:8px;"><div style="justify-self:end;background:#237f73;color:white;border-radius:6px;padding:8px;max-width:75%;">最近复习压力有点大。</div><div style="background:#f2f6f4;border-radius:6px;padding:8px;max-width:75%;">我理解你现在的压力，我们先把今天的一步理清。</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <div class="options">
+    <div class="option" data-choice="same-login-role-redirect" onclick="toggleSelect(this)">
+      <div class="letter">✓</div>
+      <div class="content"><h3>采用这个权限分流</h3><p>所有账号从同一个登录页面进入；登录成功后根据角色显示管理入口。只有总管可以点击用户查看会话和消息。</p></div>
+    </div>
+  </div>
+</div>
