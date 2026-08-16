@@ -1,5 +1,9 @@
 pip==25.2
 uv==0.12.0
+fastapi
+uvicorn
+aiosqlite
+pydantic
 langchain==1.3.13
 langgraph>=1.0.7
 langchain-openai

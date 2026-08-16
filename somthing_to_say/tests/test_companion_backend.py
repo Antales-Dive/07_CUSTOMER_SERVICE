@@ -36,7 +36,27 @@ def string_literals(filename: str) -> list[str]:
     ]
 
 
+def declared_requirement_names() -> set[str]:
+    names: set[str] = set()
+    for line in read_source("requirements.txt").splitlines():
+        requirement = line.strip()
+        if not requirement or requirement.startswith("#"):
+            continue
+        name = requirement.split(";", 1)[0].split("[", 1)[0]
+        for marker in ("==", ">=", "<=", "~=", "!=", ">", "<"):
+            name = name.split(marker, 1)[0]
+        names.add(name.strip().lower())
+    return names
+
+
 class CompanionBackendSafetyContractTests(unittest.TestCase):
+    def test_runtime_dependencies_are_declared(self):
+        requirements = declared_requirement_names()
+
+        for dependency in ("fastapi", "uvicorn", "aiosqlite", "pydantic"):
+            with self.subTest(dependency=dependency):
+                self.assertIn(dependency, requirements)
+
     def test_mcp_launcher_supports_linux_and_windows(self):
         main_source = read_source("main.py")
 
