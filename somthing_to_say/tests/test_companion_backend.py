@@ -57,6 +57,11 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             with self.subTest(dependency=dependency):
                 self.assertIn(dependency, requirements)
 
+    def test_mcp_sdk_is_constrained_below_major_two(self):
+        requirements = read_source("requirements.txt")
+
+        self.assertIn("mcp>=1.9.2,<2.0", requirements)
+
     def test_mcp_launcher_supports_linux_and_windows(self):
         main_source = read_source("main.py")
 

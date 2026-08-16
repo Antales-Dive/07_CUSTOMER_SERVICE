@@ -15,4 +15,4 @@ langchain-mcp-adapters==0.3.0
 langsmith
 chromadb
 python-dotenv
-mcp
+mcp>=1.9.2,<2.0
