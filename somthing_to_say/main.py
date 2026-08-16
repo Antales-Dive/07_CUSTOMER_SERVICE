@@ -66,6 +66,9 @@ from rag import build_faq_search_tool, build_vectorstore, load_faq_documents, sh
 from safety import classify_input_rules, safe_fallback, scan_output_window, validate_output_rules
 
 
+MCP_NPX_COMMAND = "npx.cmd" if sys.platform == "win32" else "npx"
+
+
 _FILESYSTEM_TOOL_SCHEMAS: dict[str, dict] = {
     "read_file": {"path": {"type": "string"}},
     "read_multiple_files": {"paths": {"type": "array", "items": {"type": "string"}}},
@@ -308,7 +311,7 @@ async def lifespan(app: FastAPI):
     client = MultiServerMCPClient(
         {
             "filesystem": {
-                "command": "npx.cmd",
+                "command": MCP_NPX_COMMAND,
                 "args": ["-y", "@modelcontextprotocol/server-filesystem@0.6.0", MCP_WORKSPACE],
                 "transport": "stdio",
             },

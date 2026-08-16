@@ -37,6 +37,12 @@ def string_literals(filename: str) -> list[str]:
 
 
 class CompanionBackendSafetyContractTests(unittest.TestCase):
+    def test_mcp_launcher_supports_linux_and_windows(self):
+        main_source = read_source("main.py")
+
+        self.assertIn('MCP_NPX_COMMAND = "npx.cmd" if sys.platform == "win32" else "npx"', main_source)
+        self.assertIn('"command": MCP_NPX_COMMAND', main_source)
+
     def test_app_identity_uses_companion_name(self):
         main_source = read_source("main.py")
         tree = ast.parse(main_source, filename="main.py")
