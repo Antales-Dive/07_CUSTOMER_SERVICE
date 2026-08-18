@@ -13,16 +13,25 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── 路径 ──
-# 项目根 = 07_customer_service 的上级（.env、mcp_workspace 都在这）
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-# 本目录
 APP_DIR = Path(__file__).resolve().parent
 
-MCP_WORKSPACE = str(PROJECT_ROOT / "mcp_workspace")   # MCP 文件系统允许访问的目录
 CHROMA_PERSIST_DIR = str(APP_DIR / "chroma_store")     # 向量库持久化目录
 FAQ_DOCS_DIR = str(APP_DIR / "faq_docs")               # FAQ 知识库文档目录
 DB_PATH = str(APP_DIR / "customer_service.db")          # SQLite 数据库文件
 STATIC_DIR = str(APP_DIR / "static")                   # 前端静态文件目录
+
+# ── 郑州大学只读 MCP ──
+ZZU_OFFICIAL_DOMAIN = "zzu.edu.cn"
+ZZU_SEARCH_URL = "https://www.zzu.edu.cn/ssjgy.jsp?wbtreeid=1001"
+ZZU_HTTP_TIMEOUT_SECONDS = 10.0
+ZZU_MAX_RESPONSE_BYTES = 1_000_000
+ZZU_MAX_REDIRECTS = 3
+ZZU_OFFICIAL_SOURCES = (
+    ("郑州大学首页", "https://www.zzu.edu.cn/", "学校新闻与公开信息"),
+    ("本科生院", "http://www5.zzu.edu.cn/jwc/", "选课、教务与教学通知"),
+    ("研究生院", "http://gs.zzu.edu.cn/", "研究生培养与管理通知"),
+    ("学生工作", "https://www.zzu.edu.cn/rcpy/xsgzwz.htm", "学生事务入口"),
+)
 
 # ── 模型 ──
 PRIMARY_MODEL = "deepseek:deepseek-v4-flash"  # DeepSeek 主模型
@@ -69,8 +78,12 @@ SYSTEM_PROMPT = (
     "经过核实的学校支持渠道或当地紧急服务。\n"
     "- 你只能提供帮助入口，绝不自动创建工单、发送聊天内容或代替用户联系任何人，"
     "也不能声称已经联系任何人。\n"
-    "- 情绪陪伴对话不调用任何工具。天气、订单和 FAQ 工具仅用于用户明确提出且与相应功能"
-    "匹配的请求；FAQ 没有答案时如实说明，不要编造。"
+    "- 对郑州大学校内流程、通知、联系方式等事实性问题，可以使用“郑州大学官网公开资料”工具；"
+    "只能依据工具返回的内容回答，并引用工具返回的官方链接。\n"
+    "- 工具未返回可靠资料时，明确说明未检索到官方依据，不要猜测或编造校内规定、日期、"
+    "联系方式或办理流程。\n"
+    "- 情绪陪伴对话仅在用户明确提出且与相应功能匹配时使用天气、订单、FAQ 或校园资料工具；"
+    "FAQ 或校园资料没有可靠答案时如实说明，不要编造。"
 )
 
 PROBLEM_SOLVING_PROMPT = (
@@ -81,6 +94,10 @@ PROBLEM_SOLVING_PROMPT = (
     "- 需要比较时说明适用条件或代价；用户需要行动建议时给出容易开始的一步。\n"
     "- 回答保持简洁，避免用长篇情绪安慰代替问题分析。\n"
     "- 不提供医疗诊断或治疗、法律定论、投资建议、违法操作或危险操作指导。\n"
+    "- 对郑州大学校内流程、通知、联系方式等事实性问题，可以使用“郑州大学官网公开资料”工具；"
+    "只能依据工具返回的内容回答，并引用工具返回的官方链接。\n"
+    "- 工具未返回可靠资料时，明确说明未检索到官方依据，不要猜测或编造校内规定、日期、"
+    "联系方式或办理流程。\n"
     "- 如果用户表达自伤、伤人、暴力或正在失控，停止普通方案，优先确认安全并建议联系可信任的人、"
     "学校官方支持渠道或当地紧急服务。只提供入口，不代替用户联系任何人。"
 )

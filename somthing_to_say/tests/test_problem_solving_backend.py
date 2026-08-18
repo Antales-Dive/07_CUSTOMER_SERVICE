@@ -16,11 +16,25 @@ class ProblemSolvingContractTests(unittest.TestCase):
         self.assertNotIn("必须明确给出“今天的第一步”", source)
         self.assertIn("不提供医疗诊断或治疗、法律定论、投资建议", source)
 
-    def test_problem_solving_agent_disables_tools(self):
+    def test_problem_solving_agent_keeps_available_tools(self):
         source = (ROOT / "agent_factory.py").read_text(encoding="utf-8")
-        self.assertIn('if mode == "problem_solving":', source)
-        self.assertIn("tools = []", source)
+        self.assertIn("tools = [get_weather, query_order]", source)
+        self.assertIn("if rag_tool is not None:", source)
+        self.assertIn("if mcp_tools:", source)
+        self.assertIn("tools.extend(mcp_tools)", source)
+        self.assertNotIn('mode != "problem_solving"', source)
+        self.assertNotIn("tools = []", source)
         self.assertIn("PROBLEM_SOLVING_PROMPT", source)
+
+    def test_problem_solving_mode_can_use_faq_and_official_sources(self):
+        main_source = (ROOT / "main.py").read_text(encoding="utf-8")
+        config_source = (ROOT / "config.py").read_text(encoding="utf-8")
+        problem_solving_prompt = config_source.partition("PROBLEM_SOLVING_PROMPT")[2]
+
+        self.assertIn("if should_use_knowledge_base(content):", main_source)
+        self.assertNotIn('mode == "companion" and should_use_knowledge_base(content)', main_source)
+        self.assertIn("郑州大学官网公开资料", problem_solving_prompt)
+        self.assertIn("引用工具返回的官方链接", problem_solving_prompt)
 
     def test_chat_request_defaults_to_companion_mode(self):
         from models import ChatRequest

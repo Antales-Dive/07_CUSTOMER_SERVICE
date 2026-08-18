@@ -62,11 +62,14 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
 
         self.assertIn("mcp>=1.9.2,<2.0", requirements)
 
-    def test_mcp_launcher_supports_linux_and_windows(self):
+    def test_mcp_launcher_uses_the_read_only_python_server(self):
         main_source = read_source("main.py")
 
-        self.assertIn('MCP_NPX_COMMAND = "npx.cmd" if sys.platform == "win32" else "npx"', main_source)
-        self.assertIn('"command": MCP_NPX_COMMAND', main_source)
+        self.assertIn('"zzu_official"', main_source)
+        self.assertIn('"command": sys.executable', main_source)
+        self.assertIn('"zzu_campus_mcp.py"', main_source)
+        self.assertNotIn("@modelcontextprotocol/server-filesystem", main_source)
+        self.assertNotIn('"write_file"', main_source)
 
     def test_app_identity_uses_companion_name(self):
         main_source = read_source("main.py")
@@ -101,10 +104,15 @@ class CompanionBackendSafetyContractTests(unittest.TestCase):
             "不进行心理疾病诊断或治疗",
             "找真人聊聊",
             "不能声称已经联系任何人",
+            "郑州大学官网公开资料",
+            "引用工具返回的官方链接",
+            "不要猜测或编造校内规定",
         )
         for phrase in required_phrases:
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, prompt)
+        self.assertNotIn("情绪陪伴对话不调用任何工具", prompt)
+        self.assertIn("校园资料工具", prompt)
 
     def test_system_prompt_covers_urgent_safety_paths(self):
         prompt = assigned_string_constants("config.py")["SYSTEM_PROMPT"]

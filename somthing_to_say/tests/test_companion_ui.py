@@ -44,6 +44,13 @@ class CompanionUIStructureTests(unittest.TestCase):
         self.assertNotIn('data-mode="urgent"', self.html)
         self.assertIn("const USER_CHAT_MODES = ['companion', 'problem_solving'];", self.html)
 
+    def test_welcome_quick_prompts_only_expose_two_modes(self):
+        self.assertIn(">情绪陪伴模式</button>", self.html)
+        self.assertIn(">问题解决模式</button>", self.html)
+        self.assertNotIn("我只想吐槽", self.html)
+        self.assertNotIn("陪我理一理", self.html)
+        self.assertNotIn("有点撑不住了", self.html)
+
     def test_support_and_privacy_structure_is_present(self):
         required_structure = (
             'id="support-btn"',
@@ -164,9 +171,18 @@ class CompanionUIStructureTests(unittest.TestCase):
         self.assertIn("streamChat: async", self.html)
         self.assertIn("response.body.getReader()", self.html)
         self.assertIn("eventName === 'delta'", self.html)
+        self.assertIn("eventName === 'tool'", self.html)
         self.assertIn("eventName === 'done'", self.html)
         self.assertIn("eventName === 'error'", self.html)
-        self.assertIn("await api.streamChat(currentSessionId, content, currentMode", self.html)
+        self.assertIn("await api.streamChat(", self.html)
+        self.assertIn("currentSessionId,\n        content,\n        currentMode", self.html)
+
+    def test_tool_progress_is_collapsible_and_separate_from_answer(self):
+        self.assertIn("function updateToolProgress", self.html)
+        self.assertIn("document.createElement('details')", self.html)
+        self.assertIn("查询过程", self.html)
+        self.assertIn("details.open = false", self.html)
+        self.assertIn("onTool(payload)", self.html)
 
     def test_streaming_reply_uses_dynamic_waiting_status(self):
         self.assertIn("function startWaitingStatus", self.html)

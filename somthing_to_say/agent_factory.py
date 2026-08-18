@@ -70,11 +70,9 @@ async def build_agent(
     fallback = init_chat_model(FALLBACK_MODEL, temperature=0, max_tokens=200)
 
     tools = [get_weather, query_order]
-    if mode == "problem_solving":
-        tools = []
-    if rag_tool is not None and mode != "problem_solving":
+    if rag_tool is not None:
         tools.append(rag_tool)
-    if mcp_tools and mode != "problem_solving":
+    if mcp_tools:
         tools.extend(mcp_tools)
 
     base_prompt = PROBLEM_SOLVING_PROMPT if mode == "problem_solving" else SYSTEM_PROMPT

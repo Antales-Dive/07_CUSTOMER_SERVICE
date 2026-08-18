@@ -9,13 +9,14 @@ import sys
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from agent_factory import build_agent
-from config import DB_PATH, MCP_WORKSPACE, STATIC_DIR
+from config import DB_PATH, STATIC_DIR
 from database import (
     add_message,
     create_account,
@@ -66,36 +67,16 @@ from rag import build_faq_search_tool, build_vectorstore, load_faq_documents, sh
 from safety import classify_input_rules, safe_fallback, scan_output_window, validate_output_rules
 
 
-MCP_NPX_COMMAND = "npx.cmd" if sys.platform == "win32" else "npx"
-
-
-_FILESYSTEM_TOOL_SCHEMAS: dict[str, dict] = {
-    "read_file": {"path": {"type": "string"}},
-    "read_multiple_files": {"paths": {"type": "array", "items": {"type": "string"}}},
-    "write_file": {"path": {"type": "string"}, "content": {"type": "string"}},
-    "create_directory": {"path": {"type": "string"}},
-    "list_directory": {"path": {"type": "string"}},
-    "move_file": {"source": {"type": "string"}, "destination": {"type": "string"}},
-    "search_files": {"path": {"type": "string"}, "pattern": {"type": "string"}},
-    "get_file_info": {"path": {"type": "string"}},
-}
-
 _PASSWORD_ITERATIONS = 210_000
 
-
-def _normalize_mcp_tool_schemas(tools: list) -> list:
-    for tool in tools:
-        schema = getattr(tool, "args_schema", None)
-        if isinstance(schema, dict) and (
-            schema.get("type") != "object" or "properties" not in schema
-        ):
-            props = _FILESYSTEM_TOOL_SCHEMAS.get(tool.name, {})
-            tool.args_schema = {
-                "type": "object",
-                "properties": props,
-                "required": list(props.keys()),
-            }
-    return tools
+_TOOL_PROGRESS_LABELS = {
+    "search_zzu_official_site": "搜索郑州大学官网",
+    "read_zzu_official_page": "读取郑州大学官网页面",
+    "list_zzu_official_sources": "获取郑州大学官方入口",
+    "search_faq": "查询校园常见问题",
+    "get_weather": "查询天气",
+    "query_order": "查询订单状态",
+}
 
 
 def normalize_username(username: str) -> tuple[str, str]:
@@ -222,27 +203,131 @@ def _message_content(message: object) -> str:
 def _extract_agent_answer(response: object) -> str:
     if isinstance(response, dict):
         messages = response.get("messages", [])
-        if messages:
-            return _message_content(messages[-1]).strip()
+        for message in reversed(messages):
+            answer = _assistant_stream_content(message).strip()
+            if answer:
+                return answer
     return ""
+
+
+def _message_type(message: object) -> str:
+    if isinstance(message, dict):
+        return str(message.get("type") or message.get("role") or "")
+    return str(getattr(message, "type", ""))
+
+
+def _is_assistant_message(message: object) -> bool:
+    return _message_type(message) in {"ai", "assistant", "AIMessageChunk"}
+
+
+def _message_tool_calls(message: object) -> list:
+    if isinstance(message, dict):
+        calls = message.get("tool_calls", [])
+    else:
+        calls = getattr(message, "tool_calls", [])
+    return calls if isinstance(calls, list) else []
+
+
+def _tool_call_name(call: object) -> str:
+    if isinstance(call, dict):
+        return str(call.get("name") or "")
+    return str(getattr(call, "name", "") or "")
+
+
+def _tool_call_id(call: object) -> str:
+    if isinstance(call, dict):
+        return str(call.get("id") or "")
+    return str(getattr(call, "id", "") or "")
+
+
+def _tool_label(tool_name: str) -> str:
+    return _TOOL_PROGRESS_LABELS.get(tool_name, "使用辅助工具")
+
+
+def _extract_tool_progress(chunk: object) -> list[dict[str, str]]:
+    """Extract tool status only; never expose tool arguments or results."""
+    messages: list[object] = []
+    if isinstance(chunk, tuple) and chunk:
+        messages.append(chunk[0])
+    elif isinstance(chunk, dict):
+        raw_messages = chunk.get("messages")
+        if isinstance(raw_messages, list):
+            messages.extend(raw_messages)
+        for key, value in chunk.items():
+            if key != "messages":
+                messages.extend(_collect_messages(value))
+    else:
+        messages.append(chunk)
+
+    progress: list[dict[str, str]] = []
+    for message in messages:
+        if _is_assistant_message(message):
+            for call in _message_tool_calls(message):
+                tool_name = _tool_call_name(call)
+                progress.append(
+                    {
+                        "call_id": _tool_call_id(call),
+                        "tool": tool_name,
+                        "status": "running",
+                        "label": _tool_label(tool_name),
+                    }
+                )
+        elif _message_type(message) == "tool":
+            if isinstance(message, dict):
+                tool_name = str(message.get("name") or "")
+                call_id = str(message.get("tool_call_id") or "")
+                status = str(message.get("status") or "")
+            else:
+                tool_name = str(getattr(message, "name", "") or "")
+                call_id = str(getattr(message, "tool_call_id", "") or "")
+                status = str(getattr(message, "status", "") or "")
+            progress.append(
+                {
+                    "call_id": call_id,
+                    "tool": tool_name,
+                    "status": "failed" if status == "error" else "completed",
+                    "label": _tool_label(tool_name),
+                }
+            )
+    return progress
+
+
+def _collect_messages(value: object) -> list[object]:
+    if isinstance(value, dict):
+        messages = value.get("messages")
+        collected = list(messages) if isinstance(messages, list) else []
+        for key, nested in value.items():
+            if key != "messages":
+                collected.extend(_collect_messages(nested))
+        return collected
+    if isinstance(value, list):
+        collected: list[object] = []
+        for item in value:
+            collected.extend(_collect_messages(item))
+        return collected
+    return [value] if _message_type(value) else []
+
+
+def _assistant_stream_content(message: object) -> str:
+    if not _is_assistant_message(message) or _message_tool_calls(message):
+        return ""
+    return _message_content(message)
 
 
 def _extract_stream_content(chunk: object) -> str:
     if isinstance(chunk, tuple) and chunk:
-        return _message_content(chunk[0])
+        return _assistant_stream_content(chunk[0])
     if isinstance(chunk, dict):
         if isinstance(chunk.get("delta"), str):
             return chunk["delta"]
-        if isinstance(chunk.get("content"), str):
-            return chunk["content"]
         messages = chunk.get("messages")
         if messages:
-            return _message_content(messages[-1])
+            return _assistant_stream_content(messages[-1])
         for value in chunk.values():
             text = _extract_stream_content(value)
             if text:
                 return text
-    return _message_content(chunk)
+    return _assistant_stream_content(chunk)
 
 
 def sse_event(event: str, payload: dict) -> str:
@@ -256,8 +341,8 @@ async def _build_history(session_id: str) -> list[dict]:
     ]
 
 
-def _rag_tool_for_request(content: str, mode: str):
-    if mode == "companion" and should_use_knowledge_base(content):
+def _rag_tool_for_request(content: str):
+    if should_use_knowledge_base(content):
         return app.state.faq_tool
     return None
 
@@ -268,7 +353,7 @@ async def _invoke_safe_answer(
     agent = await build_agent(
         session_id=session_id,
         mcp_tools=app.state.mcp_tools,
-        rag_tool=_rag_tool_for_request(content, mode),
+        rag_tool=_rag_tool_for_request(content),
         mode=mode,
     )
     response = await agent.ainvoke({"messages": messages})
@@ -308,17 +393,18 @@ async def lifespan(app: FastAPI):
 
     from langchain_mcp_adapters.client import MultiServerMCPClient
 
+    server_path = str(Path(__file__).with_name("zzu_campus_mcp.py"))
     client = MultiServerMCPClient(
         {
-            "filesystem": {
-                "command": MCP_NPX_COMMAND,
-                "args": ["-y", "@modelcontextprotocol/server-filesystem@0.6.0", MCP_WORKSPACE],
+            "zzu_official": {
+                "command": sys.executable,
+                "args": [server_path],
                 "transport": "stdio",
             },
         }
     )
-    app.state.mcp_tools = _normalize_mcp_tool_schemas(await client.get_tools())
-    print(f"[启动] 已加载 {len(app.state.mcp_tools)} 个 MCP 工具")
+    app.state.mcp_tools = await client.get_tools()
+    print(f"[启动] 已加载 {len(app.state.mcp_tools)} 个郑州大学只读 MCP 工具")
 
     docs = load_faq_documents()
     vectorstore = build_vectorstore(docs)
@@ -487,11 +573,12 @@ async def api_chat_stream(session_id: str, payload: ChatRequest, request: Reques
 
         answer_parts: list[str] = []
         rolling_window = ""
+        emitted_tool_events: set[tuple[str, str, str]] = set()
         try:
             agent = await build_agent(
                 session_id=session_id,
                 mcp_tools=app.state.mcp_tools,
-                rag_tool=_rag_tool_for_request(content, payload.mode),
+                rag_tool=_rag_tool_for_request(content),
                 mode=payload.mode,
             )
             if not hasattr(agent, "astream"):
@@ -503,6 +590,16 @@ async def api_chat_stream(session_id: str, payload: ChatRequest, request: Reques
 
             assembled = ""
             async for chunk in agent.astream({"messages": messages}):
+                for progress in _extract_tool_progress(chunk):
+                    event_key = (
+                        progress["call_id"],
+                        progress["tool"],
+                        progress["status"],
+                    )
+                    if event_key in emitted_tool_events:
+                        continue
+                    emitted_tool_events.add(event_key)
+                    yield sse_event("tool", progress)
                 text = _extract_stream_content(chunk)
                 if not text:
                     continue

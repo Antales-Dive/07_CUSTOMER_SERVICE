@@ -327,6 +327,11 @@
     justify-content: flex-end;
   }
 
+  .msg.assistant {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .bubble {
     max-width: min(70%, 680px);
     padding: 12px 15px;
@@ -335,6 +340,31 @@
     line-height: 1.7;
     white-space: pre-wrap;
     word-break: break-word;
+  }
+
+  .tool-progress {
+    max-width: min(70%, 680px);
+    margin-bottom: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .tool-progress summary {
+    cursor: pointer;
+    color: var(--primary-strong);
+    font-weight: 700;
+  }
+
+  .tool-progress-list {
+    display: grid;
+    gap: 3px;
+    margin-top: 6px;
+    padding-left: 18px;
+  }
+
+  .tool-progress-item.failed {
+    color: var(--emergency);
   }
 
   .msg.user .bubble {
@@ -839,6 +869,10 @@
       max-width: 88%;
     }
 
+    .tool-progress {
+      max-width: 88%;
+    }
+
     #input-area {
       min-height: 72px;
       grid-template-columns: minmax(0, 1fr) 72px;
@@ -898,10 +932,8 @@
       <h2 id="welcome-title">今天过得怎么样？</h2>
       <p class="welcome-copy">不用想好怎么说，想到哪儿说到哪儿。</p>
       <div class="quick-prompts" aria-label="选择一种聊天方式">
-        <button class="quick-prompt" type="button">我只想吐槽</button>
-        <button class="quick-prompt" type="button">陪我理一理</button>
-        <button class="quick-prompt" type="button" data-mode="problem_solving">帮我想办法</button>
-        <button class="quick-prompt" type="button" data-mode="companion">有点撑不住了</button>
+        <button class="quick-prompt" type="button" data-mode="companion">情绪陪伴模式</button>
+        <button class="quick-prompt" type="button" data-mode="problem_solving">问题解决模式</button>
       </div>
       <p class="privacy-note">聊天会保存在会话历史中，但不会自动联系任何人或转交给真人。</p>
     </section>
@@ -1075,7 +1107,7 @@ const api = {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({content, mode: currentMode})
   }),
-  streamChat: async (id, content, mode, onDelta) => {
+  streamChat: async (id, content, mode, onDelta, onTool) => {
     const response = await fetch(`/api/chat/${id}/stream`, {
       method: 'POST',
       headers: {...identityHeaders(), 'Content-Type': 'application/json'},
@@ -1102,6 +1134,7 @@ const api = {
       if (!data) return;
       const payload = JSON.parse(data);
       if (eventName === 'delta') onDelta(payload.text || '');
+      if (eventName === 'tool' && onTool) onTool(payload);
       if (eventName === 'error') throw new Error(payload.message || '流式回复失败');
       if (eventName === 'done') completed = true;
       eventName = '';
@@ -1333,10 +1366,8 @@ function renderWelcomeState() {
       <h2 id="welcome-title">今天过得怎么样？</h2>
       <p class="welcome-copy">不用想好怎么说，想到哪儿说到哪儿。</p>
       <div class="quick-prompts" aria-label="选择一种聊天方式">
-        <button class="quick-prompt" type="button">我只想吐槽</button>
-        <button class="quick-prompt" type="button">陪我理一理</button>
-        <button class="quick-prompt" type="button" data-mode="problem_solving">帮我想办法</button>
-        <button class="quick-prompt" type="button" data-mode="companion">有点撑不住了</button>
+        <button class="quick-prompt" type="button" data-mode="companion">情绪陪伴模式</button>
+        <button class="quick-prompt" type="button" data-mode="problem_solving">问题解决模式</button>
       </div>
       <p class="privacy-note">聊天会保存在会话历史中，但不会自动联系任何人或转交给真人。</p>
     </section>
@@ -1475,6 +1506,46 @@ function stopWaitingStatus() {
   }
 }
 
+function updateToolProgress(assistantWrap, payload) {
+  let details = assistantWrap.querySelector('.tool-progress');
+  if (!details) {
+    details = document.createElement('details');
+    details.className = 'tool-progress';
+    details.open = true;
+    const summary = document.createElement('summary');
+    summary.textContent = '查询过程';
+    const list = document.createElement('div');
+    list.className = 'tool-progress-list';
+    details.append(summary, list);
+    assistantWrap.insertBefore(details, assistantWrap.querySelector('.bubble'));
+  }
+
+  details.open = true;
+  details.querySelector('summary').textContent = '查询过程';
+  const callId = payload.call_id || payload.tool || 'tool';
+  const list = details.querySelector('.tool-progress-list');
+  let item = Array.from(list.children).find((entry) => entry.dataset.callId === callId);
+  if (!item) {
+    item = document.createElement('div');
+    item.dataset.callId = callId;
+    list.appendChild(item);
+  }
+  item.className = 'tool-progress-item ' + (payload.status === 'failed' ? 'failed' : '');
+  item.textContent = payload.status === 'running'
+    ? '正在' + (payload.label || '查询资料')
+    : payload.status === 'failed'
+      ? (payload.label || '资料查询') + '失败'
+      : '已完成' + (payload.label || '资料查询');
+  return details;
+}
+
+function finishToolProgress(assistantWrap) {
+  const details = assistantWrap.querySelector('.tool-progress');
+  if (!details) return;
+  details.open = false;
+  details.querySelector('summary').textContent = '查询过程（已完成）';
+}
+
 async function send() {
   const content = inputEl.value.trim();
   if (!content || loading || !currentSessionId) return;
@@ -1487,14 +1558,21 @@ async function send() {
   sendBtn.disabled = true;
   try {
     try {
-      await api.streamChat(currentSessionId, content, currentMode, (delta) => {
-        const wasWaiting = assistantWrap.classList.contains('loading');
-        stopWaitingStatus();
-        assistantWrap.classList.remove('loading');
-        if (wasWaiting) assistantBubble.textContent = '';
-        assistantBubble.textContent += delta;
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      });
+      await api.streamChat(
+        currentSessionId,
+        content,
+        currentMode,
+        (delta) => {
+          const wasWaiting = assistantWrap.classList.contains('loading');
+          stopWaitingStatus();
+          assistantWrap.classList.remove('loading');
+          if (wasWaiting) assistantBubble.textContent = '';
+          assistantBubble.textContent += delta;
+          messagesEl.scrollTop = messagesEl.scrollHeight;
+        },
+        (payload) => updateToolProgress(assistantWrap, payload),
+      );
+      finishToolProgress(assistantWrap);
     } catch (error) {
       messagesEl.removeChild(messagesEl.lastChild);
       appendMsg('assistant', error.message || '我刚才没能接上，你可以再试一次。需要的话，也可以先找真人聊聊。');
